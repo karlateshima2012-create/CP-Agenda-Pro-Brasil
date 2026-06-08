@@ -11,17 +11,19 @@ export interface AuthRequest extends Request {
 }
 
 export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction) => {
+  let token = req.cookies?.token;
   const authHeader = req.headers.authorization;
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!token && authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  }
+
+  if (!token) {
     return res.status(401).json({ error: 'Acesso negado. Token não fornecido.' });
   }
 
-  const token = authHeader.split(' ')[1];
-
   try {
-    const secret = process.env.JWT_SECRET || 'fallback_secret';
-    const decoded = jwt.verify(token, secret) as any;
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret') as any;
     
     // Injeção vitalícia do tenant
     req.user = {

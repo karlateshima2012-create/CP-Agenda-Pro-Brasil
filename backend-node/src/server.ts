@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { PrismaClient } from '@prisma/client';
 import authRoutes from './routes/auth.js';
@@ -18,8 +19,9 @@ dotenv.config();
 const app = express();
 export const prisma = new PrismaClient();
 
-app.use(cors());
+app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
+app.use(cookieParser());
 
 app.use((req, res, next) => {
   const originalJson = res.json;
