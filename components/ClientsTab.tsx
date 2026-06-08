@@ -33,16 +33,17 @@ export const ClientsTab: React.FC = () => {
     return () => clearTimeout(timer);
   }, [search]);
 
-  // Japanese phone format helper
-  const formatJapanesePhone = (raw: string): string => {
+  // Brazilian phone format helper
+  const formatBrazilianPhone = (raw: string): string => {
     const digits = raw.replace(/\D/g, '').slice(0, 11);
-    if (digits.length <= 3)  return digits;
-    if (digits.length <= 7)  return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-    return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
 
   const handlePhoneChange = (val: string) => {
-    setFormData({ ...formData, phone: formatJapanesePhone(val) });
+    setFormData({ ...formData, phone: formatBrazilianPhone(val) });
   };
 
   const rawPhoneDigits = (formData.phone || '').replace(/\D/g, '');
@@ -220,20 +221,20 @@ export const ClientsTab: React.FC = () => {
                     required
                     type="tel"
                     inputMode="numeric"
-                    maxLength={13}
+                    maxLength={15}
                     value={formData.phone}
                     onChange={e => handlePhoneChange(e.target.value)}
-                    placeholder="090 0000 0000"
+                    placeholder="(11) 90000-0000"
                     className="w-full pl-12 pr-4 py-4 bg-gray-50 border-2 border-transparent focus:border-primary focus:bg-white rounded-2xl outline-none transition-all font-mono font-bold"
                   />
                 </div>
                 {/* Digit counter */}
                 <div className="flex justify-end px-2">
                   <span className={`text-[10px] font-bold tabular-nums transition-colors ${
-                    rawPhoneDigits.length === 11 ? 'text-green-500' :
+                    (rawPhoneDigits.length === 10 || rawPhoneDigits.length === 11) ? 'text-green-500' :
                     rawPhoneDigits.length > 0    ? 'text-amber-500' : 'text-gray-300'
                   }`}>
-                    {rawPhoneDigits.length}/11 dígitos {rawPhoneDigits.length === 11 && '✓'}
+                    {rawPhoneDigits.length}/11 dígitos {(rawPhoneDigits.length === 10 || rawPhoneDigits.length === 11) && '✓'}
                   </span>
                 </div>
               </div>

@@ -48,8 +48,8 @@ export const NOTIFICATION_SOUND = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBA
 export const generateWhatsAppLink = (appointment: any, action: string) => {
   if (!appointment || !appointment.clientPhone) return '#';
   const phone = normalizeForWhatsApp(appointment.clientPhone);
-  const date = new Date(appointment.startAt).toLocaleDateString('pt-BR', { timeZone: 'Asia/Tokyo' });
-  const time = new Date(appointment.startAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Tokyo' });
+  const date = new Date(appointment.startAt).toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+  const time = new Date(appointment.startAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Sao_Paulo' });
   
   let message = "";
   if (action === 'confirmed') message = `✅ Olá ${appointment.clientName}! Seu horário para *${appointment.serviceName}* foi *CONFIRMADO* para dia *${date}* às *${time}*.`;

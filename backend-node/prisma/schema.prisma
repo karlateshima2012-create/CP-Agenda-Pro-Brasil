@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                    Int       @id @default(autoincrement())
+  name                  String    @db.VarChar(255)
+  owner_name            String?   @default("") @db.VarChar(255)
+  status                String?   @default("active")
+  plan_type             String?   @default("6m")
+  plan_expires_at       DateTime?
+  primary_color         String?   @default("#25aae1") @db.VarChar(7)
+  secondary_color       String?   @default("#1f2937") @db.VarChar(7)
+  short_description     String?   @db.Text
+  services_title        String?   @default("Meus Serviços") @db.VarChar(255)
+  services_subtitle     String?   @default("Selecione abaixo o serviço desejado") @db.VarChar(255)
+  cover_image           String?   @default("") @db.VarChar(255)
+  view_mode             String?   @default("card") @db.VarChar(10)
+  cover_opacity         Int?      @default(100)
+  profile_image         String?   @default("") @db.VarChar(255)
+  telegram_bot_token    String?   @default("") @db.VarChar(255)
+  telegram_chat_id      String?   @default("") @db.VarChar(255)
+  invoices              Json?
+  onboarding_seen       Boolean?  @default(false)
+  lifetime_appointments Int?      @default(0)
+  created_at            DateTime? @default(now())
+  updated_at            DateTime? @default(now()) @updatedAt
+
+  users                 User[]
+  services              Service[]
+  availability          Availability[]
+  blocked_dates         BlockedDate[]
+  appointments          Appointment[]
+  clients               Client[]
+
+  @@map("cp_agenda_accounts")
+}
+
+model User {
+  id                   Int       @id @default(autoincrement())
+  account_id           Int
+  role                 String?   @default("client")
+  name                 String    @db.VarChar(255)
+  email                String    @unique @db.VarChar(255)
+  password_hash        String    @db.VarChar(255)
+  reset_token          String?   @db.VarChar(100)
+  reset_expires        DateTime?
+  must_change_password Boolean?  @default(false)
+  created_at           DateTime? @default(now())
+  updated_at           DateTime? @default(now()) @updatedAt
+
+  account              Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+
+  @@map("cp_agenda_users")
+}
+
+model Service {
+  id                Int       @id @default(autoincrement())
+  account_id        Int
+  user_id           Int?
+  name              String    @db.VarChar(255)
+  description       String?   @db.Text
+  duration_min      Int       @default(30)
+  price             Decimal?  @default(0.00) @db.Decimal(10, 2)
+  is_active         Boolean?  @default(true)
+  sort_order        Int?      @default(0)
+  image_url         String?   @db.LongText
+  image_opacity     Int?      @default(100)
+  name_color        String?   @default("#ffffff") @db.VarChar(7)
+  description_color String?   @default("#9ca3af") @db.VarChar(7)
+  created_at        DateTime? @default(now())
+
+  account           Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+
+  @@map("cp_agenda_services")
+}
+
+model Availability {
+  id               Int       @id @default(autoincrement())
+  account_id       Int
+  user_id          Int?
+  working_hours    Json
+  interval_minutes Int?      @default(30)
+  created_at       DateTime? @default(now())
+  updated_at       DateTime? @default(now()) @updatedAt
+
+  account          Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+
+  @@map("cp_agenda_availability")
+}
+
+model BlockedDate {
+  id           Int       @id @default(autoincrement())
+  account_id   Int
+  user_id      Int?
+  blocked_date DateTime  @db.Date
+  start_time   DateTime? @db.Time
+  end_time     DateTime? @db.Time
+  reason       String?   @default("") @db.VarChar(255)
+  created_at   DateTime? @default(now())
+
+  account      Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+
+  @@map("cp_agenda_blocked_dates")
+}
+
+model Appointment {
+  id           Int       @id @default(autoincrement())
+  account_id   Int
+  user_id      Int?
+  client_name  String    @db.VarChar(255)
+  client_email String?   @default("") @db.VarChar(255)
+  client_phone String    @db.VarChar(50)
+  service_id   Int
+  service_name String    @db.VarChar(255)
+  start_at     DateTime
+  duration     Int
+  status       String?   @default("pending")
+  notes        String?   @db.Text
+  deleted_at   DateTime?
+  created_at   DateTime? @default(now())
+  updated_at   DateTime? @default(now()) @updatedAt
+
+  account      Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+
+  @@index([start_at])
+  @@map("cp_agenda_appointments")
+}
+
+model Client {
+  id         Int       @id @default(autoincrement())
+  account_id Int
+  name       String    @db.VarChar(255)
+  phone      String    @db.VarChar(50)
+  email      String?   @db.VarChar(255)
+  created_at DateTime? @default(now())
+  updated_at DateTime? @default(now()) @updatedAt
+
+  account    Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+
+  @@unique([account_id, phone])
+  @@map("cp_agenda_clients")
+}

@@ -117,7 +117,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
   // ── Métricas financeiras (Faturamento) ────────────────────────────────────
   const PRICE_MONTHLY    = 1280;
   const PRICE_ANNUAL     = 12800;
-  const PRICE_ANNUAL_MRR = PRICE_ANNUAL / 12; // ¥1.066,67
+  const PRICE_ANNUAL_MRR = PRICE_ANNUAL / 12; // R$1.066,67
   const activeList = sortedClients.filter(c => c.accountStatus === 'active');
   const clientMRR  = (c: User) => c.planType === '12m' ? PRICE_ANNUAL_MRR : PRICE_MONTHLY;
 
@@ -200,7 +200,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
     : (newThisMonth.length > 0 ? 100 : 0);
 
   // Helper moeda
-  const yen = (v: number) => `¥${Math.round(v).toLocaleString('ja-JP')}`;
+  const brl = (v: number) => `R$ ${Math.round(v).toLocaleString('pt-BR')}`;
   const monthName = (offset: number) => {
     const d = new Date(now.getFullYear(), now.getMonth() + offset, 1);
     return d.toLocaleDateString('pt-BR', { month: 'short' });
@@ -508,10 +508,10 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
           <h2 className="text-xl font-black text-gray-800 mb-4 flex items-center gap-2"><TrendingUp size={20} className="text-primary" /> Receita Recorrente</h2>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
             {[
-              { label: 'MRR', sub: 'Receita Recorrente Mensal', value: yen(mrr), color: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/10' },
-              { label: 'ARR', sub: 'Receita Recorrente Anual', value: yen(arr), color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100' },
+              { label: 'MRR', sub: 'Receita Recorrente Mensal', value: brl(mrr), color: 'text-primary', bg: 'bg-primary/5', border: 'border-primary/10' },
+              { label: 'ARR', sub: 'Receita Recorrente Anual', value: brl(arr), color: 'text-green-600', bg: 'bg-green-50', border: 'border-green-100' },
               { label: 'Churn Rate', sub: 'Clientes perdidos / mês', value: `${(churnRate * 100).toFixed(1)}%`, color: churnRate > 0.05 ? 'text-red-600' : churnRate > 0.02 ? 'text-yellow-600' : 'text-green-600', bg: churnRate > 0.05 ? 'bg-red-50' : 'bg-gray-50', border: churnRate > 0.05 ? 'border-red-100' : 'border-gray-100' },
-              { label: 'LTV', sub: 'Valor vitalício médio', value: yen(ltv), color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
+              { label: 'LTV', sub: 'Valor vitalício médio', value: brl(ltv), color: 'text-purple-600', bg: 'bg-purple-50', border: 'border-purple-100' },
             ].map(k => (
               <div key={k.label} className={`${k.bg} border ${k.border} p-6 rounded-[2rem]`}>
                 <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">{k.label}</p>
@@ -526,14 +526,14 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-white border border-gray-100 p-6 rounded-[2rem] shadow-sm">
             <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">ARPU</p>
-            <p className="text-2xl font-black text-gray-900 mt-1">{yen(arpu)}<span className="text-sm text-gray-400 font-bold">/mês</span></p>
+            <p className="text-2xl font-black text-gray-900 mt-1">{brl(arpu)}<span className="text-sm text-gray-400 font-bold">/mês</span></p>
             <p className="text-[9px] text-gray-400 font-bold mt-2">Receita média por cliente ativo</p>
           </div>
           <div className="bg-white border border-gray-100 p-6 rounded-[2rem] shadow-sm">
             <p className="text-gray-400 text-[10px] font-black uppercase tracking-widest mb-1">Net New MRR</p>
             <div className="flex items-center gap-2 mt-1">
               {netNewMRR > 0 ? <ArrowUpRight size={20} className="text-green-500" /> : netNewMRR < 0 ? <ArrowDownRight size={20} className="text-red-500" /> : <Minus size={20} className="text-gray-400" />}
-              <p className={`text-2xl font-black ${netNewMRR > 0 ? 'text-green-600' : netNewMRR < 0 ? 'text-red-600' : 'text-gray-500'}`}>{yen(Math.abs(netNewMRR))}</p>
+              <p className={`text-2xl font-black ${netNewMRR > 0 ? 'text-green-600' : netNewMRR < 0 ? 'text-red-600' : 'text-gray-500'}`}>{brl(Math.abs(netNewMRR))}</p>
             </div>
             <p className="text-[9px] text-gray-400 font-bold mt-2">Novo MRR − Churn MRR este mês</p>
           </div>
@@ -567,7 +567,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
             ].map(r => (
               <div key={r.label} className={`${r.bg} border ${r.border} p-6 rounded-[2rem]`}>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{r.dot} {r.label}</p>
-                <p className={`text-2xl font-black ${r.color} mt-1`}>{yen(r.mrrVal)}</p>
+                <p className={`text-2xl font-black ${r.color} mt-1`}>{brl(r.mrrVal)}</p>
                 <p className="text-[9px] text-gray-400 font-bold mt-2">{r.list.length} cliente{r.list.length !== 1 ? 's' : ''} · MRR em risco</p>
                 {r.list.length > 0 && (
                   <div className="mt-3 flex flex-wrap gap-1">
@@ -591,20 +591,20 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
             </div>
             <div className="text-right">
               <p className="text-[9px] text-gray-400 font-black uppercase tracking-widest">MRR atual</p>
-              <p className="text-xl font-black text-primary">{yen(mrr)}</p>
+              <p className="text-xl font-black text-primary">{brl(mrr)}</p>
             </div>
           </div>
           <div className="flex items-end gap-3 h-48">
             {/* Barra atual */}
             <div className="flex flex-col items-center gap-2 flex-1">
-              <p className="text-[9px] font-black text-primary">{yen(mrr)}</p>
+              <p className="text-[9px] font-black text-primary">{brl(mrr)}</p>
               <div className="w-full rounded-t-xl bg-primary" style={{ height: `${Math.max(4, (mrr / maxProjMRR) * 100)}%` }} />
               <p className="text-[9px] font-bold text-gray-500 uppercase">Agora</p>
             </div>
             {/* Barras projetadas */}
             {projection.map((p) => (
               <div key={p.month} className="flex flex-col items-center gap-2 flex-1">
-                <p className="text-[9px] font-black text-gray-500">{yen(p.mrr)}</p>
+                <p className="text-[9px] font-black text-gray-500">{brl(p.mrr)}</p>
                 <div className="w-full rounded-t-xl bg-primary/30" style={{ height: `${Math.max(4, (p.mrr / maxProjMRR) * 100)}%` }} />
                 <p className="text-[9px] font-bold text-gray-400 uppercase">{monthName(p.month)}</p>
               </div>
@@ -630,7 +630,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                         <span className="text-[9px] font-bold text-gray-400">{d.count} cliente{d.count !== 1 ? 's' : ''}</span>
                       </div>
                       <div className="flex items-center gap-3">
-                        <span className="text-xs font-black text-gray-600">{yen(d.mrr)}/mês MRR</span>
+                        <span className="text-xs font-black text-gray-600">{brl(d.mrr)}/mês MRR</span>
                         <span className="text-[9px] font-black text-gray-400 w-8 text-right">{pct}%</span>
                       </div>
                     </div>
@@ -642,7 +642,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
               })}
               <div className="pt-4 border-t border-gray-100 flex justify-between items-center">
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total MRR</p>
-                <p className="text-xl font-black text-primary">{yen(mrr)}</p>
+                <p className="text-xl font-black text-primary">{brl(mrr)}</p>
               </div>
             </div>
           )}
@@ -864,7 +864,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
                                 </div>
                                 <div className="grid grid-cols-3 gap-3">
                                   <div>
-                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Valor (¥)</label>
+                                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1 block">Valor (R$)</label>
                                     <input 
                                       type="number" 
                                       value={inv.amount} 

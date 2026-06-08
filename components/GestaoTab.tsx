@@ -156,7 +156,7 @@ export const GestaoTab: React.FC<Props> = ({ services }) => {
   if (thisMAppts.length === 0) alerts.push({ icon: <AlertCircle size={16} />, text: 'Nenhum atendimento confirmado este mês ainda', color: 'text-orange-600 bg-orange-50 border-orange-100' });
   if (atRisk > 0) alerts.push({ icon: <AlertCircle size={16} />, text: `${atRisk} cliente${atRisk > 1 ? 's' : ''} sem retorno há mais de 45 dias`, color: 'text-yellow-700 bg-yellow-50 border-yellow-100' });
 
-  const yen = (v: number) => `¥${Math.round(v).toLocaleString('ja-JP')}`;
+  const brl = (v: number) => `R$ ${Math.round(v).toLocaleString('pt-BR')}`;
 
   if (loading) return (
     <div className="flex flex-col items-center justify-center py-24 gap-4 text-gray-400">
@@ -215,12 +215,12 @@ export const GestaoTab: React.FC<Props> = ({ services }) => {
             <>
               <div className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm">
                 <TrendingUp size={20} className="text-green-500 mb-3" />
-                <p className="text-2xl font-black text-gray-900">{yen(thisMRevenue)}</p>
+                <p className="text-2xl font-black text-gray-900">{brl(thisMRevenue)}</p>
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Faturamento estimado*</p>
               </div>
               <div className="bg-white border border-gray-100 rounded-[2rem] p-6 shadow-sm">
                 <Star size={20} className="text-yellow-500 mb-3" />
-                <p className="text-2xl font-black text-gray-900">{ticket > 0 ? yen(ticket) : '—'}</p>
+                <p className="text-2xl font-black text-gray-900">{ticket > 0 ? brl(ticket) : '—'}</p>
                 <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-1">Valor médio por agendamento*</p>
               </div>
             </>
@@ -255,7 +255,7 @@ export const GestaoTab: React.FC<Props> = ({ services }) => {
                   </div>
                   <div className="flex items-center gap-4 shrink-0 ml-3">
                     <span className="text-[10px] font-bold text-gray-400">{svc.count} agend.</span>
-                    {hasAnyPrice && <span className="text-xs font-black text-gray-700">{yen(svc.revenue)}</span>}
+                    {hasAnyPrice && <span className="text-xs font-black text-gray-700">{brl(svc.revenue)}</span>}
                   </div>
                 </div>
                 <div className="w-full bg-gray-100 rounded-full h-2">
@@ -288,7 +288,7 @@ export const GestaoTab: React.FC<Props> = ({ services }) => {
                   {m.label}
                 </p>
                 {hasAnyPrice && m.revenue > 0 && (
-                  <p className="text-[8px] text-gray-400 font-bold">{yen(m.revenue)}</p>
+                  <p className="text-[8px] text-gray-400 font-bold">{brl(m.revenue)}</p>
                 )}
               </div>
             ))}

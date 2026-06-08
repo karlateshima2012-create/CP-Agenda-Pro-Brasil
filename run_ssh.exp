@@ -1,0 +1,22 @@
+#!/usr/bin/expect -f
+set timeout 120
+set host "76.13.209.192"
+set port "22"
+set user "root"
+set password [lindex $argv 0]
+set cmd [lindex $argv 1]
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host $cmd
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    timeout {
+        puts "Timeout reached"
+        exit 1
+    }
+    eof
+}
+catch wait result
+exit [lindex $result 3]

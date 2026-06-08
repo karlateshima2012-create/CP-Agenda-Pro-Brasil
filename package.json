@@ -19,6 +19,7 @@
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.1.2",
     "autoprefixer": "^10.4.27",
+    "glob": "^13.0.6",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.2.1",
     "typescript": "~5.8.2",

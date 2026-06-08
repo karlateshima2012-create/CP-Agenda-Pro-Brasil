@@ -42,7 +42,7 @@ function normalizePhoneToE164JP(phoneRaw: string) {
 
 function formatWhenJST(startAt: string) {
   return new Date(startAt).toLocaleString('pt-BR', {
-    timeZone: 'Asia/Tokyo',
+    timeZone: 'America/Sao_Paulo',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -127,8 +127,8 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
     if (isNaN(d.getTime())) return new Date();
     
     // Obter data e hora formatadas para Tokyo em formato compatível com o Safari (sem vírgulas)
-    const yStr = d.toLocaleDateString('sv-SE', { timeZone: 'Asia/Tokyo' }); // "YYYY-MM-DD"
-    const tStr = d.toLocaleTimeString('en-GB', { timeZone: 'Asia/Tokyo' }); // "HH:MM:SS"
+    const yStr = d.toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }); // "YYYY-MM-DD"
+    const tStr = d.toLocaleTimeString('en-GB', { timeZone: 'America/Sao_Paulo' }); // "HH:MM:SS"
     return new Date(`${yStr}T${tStr}`);
   };
 
@@ -194,7 +194,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
 
   const [currentMonth, setCurrentMonth] = useState(getTodayJST());
   const [selectedDay, setSelectedDay] = useState<Date>(() =>
-    new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }))
+    new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }))
   );
 
   const renderCalendar = () => {

@@ -61,16 +61,17 @@ export const PublicBookingPage: React.FC<Props> = ({
   const [selectedTime, setSelectedTime] = useState('');
   const [clientData, setClientData] = useState<{ name: string; phone: string; email?: string }>({ name: '', phone: '', email: '' });
 
-  // Japanese phone format: 0XX XXXX XXXX (11 digits total)
-  const formatJapanesePhone = (raw: string): string => {
+  // Brazilian phone format: (XX) XXXX-XXXX or (XX) 9XXXX-XXXX
+  const formatBrazilianPhone = (raw: string): string => {
     const digits = raw.replace(/\D/g, '').slice(0, 11);
-    if (digits.length <= 3)  return digits;
-    if (digits.length <= 7)  return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-    return `${digits.slice(0, 3)} ${digits.slice(3, 7)} ${digits.slice(7)}`;
+    if (digits.length <= 2) return digits;
+    if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
   };
 
   const handlePhoneChange = (value: string) => {
-    setClientData({ ...clientData, phone: formatJapanesePhone(value) });
+    setClientData({ ...clientData, phone: formatBrazilianPhone(value) });
   };
 
   const rawPhoneDigits = (clientData.phone || '').replace(/\D/g, '');
@@ -99,7 +100,7 @@ export const PublicBookingPage: React.FC<Props> = ({
   // ✅ SECURITY [M-8]: Debug logs removed — availability data must not be exposed in production console
 
 
-  const getNowJST = () => new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }));
+  const getNowBRT = () => new Date(new Date().toLocaleString("en-US", { timeZone: "America/Sao_Paulo" }));
   const formatLiteralDate = (date: Date) => {
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -196,10 +197,10 @@ export const PublicBookingPage: React.FC<Props> = ({
 
   const getSlotsForDate = (date: string) => {
     if (selectedServices.length === 0) return [];
-    const nowJST = getNowJST();
-    const todayStr = formatLiteralDate(nowJST);
+    const nowBRT = getNowBRT();
+    const todayStr = formatLiteralDate(nowBRT);
     const isToday = date === todayStr;
-    const currentMinutes = nowJST.getHours() * 60 + nowJST.getMinutes();
+    const currentMinutes = nowBRT.getHours() * 60 + nowBRT.getMinutes();
     const jsDayOfWeek = new Date(date + 'T12:00:00').getDay();
     const jsDayToPtDay: Record<number, string> = {
       1: 'segunda', 2: 'terca', 3: 'quarta', 4: 'quinta', 5: 'sexta', 6: 'sabado', 0: 'domingo'
@@ -277,8 +278,8 @@ export const PublicBookingPage: React.FC<Props> = ({
   };
 
   const renderCalendar = () => {
-    const nowJST = getNowJST();
-    const todayStr = formatLiteralDate(nowJST);
+    const nowBRT = getNowBRT();
+    const todayStr = formatLiteralDate(nowBRT);
     const year = currentMonth.getFullYear();
     const month = currentMonth.getMonth();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -347,9 +348,9 @@ export const PublicBookingPage: React.FC<Props> = ({
       setIsSubmitting(false);
       return;
     }
-    // Japanese phone validation: must have exactly 11 digits
-    if (rawPhoneDigits.length !== 11) {
-      setErrorMsg('O telefone deve ter 11 dígitos no formato 0XX-XXXX-XXXX.');
+    // Brazilian phone validation: must have 10 or 11 digits
+    if (rawPhoneDigits.length !== 10 && rawPhoneDigits.length !== 11) {
+      setErrorMsg('O telefone deve ter 10 ou 11 dígitos com DDD.');
       setIsSubmitting(false);
       return;
     }
@@ -535,7 +536,7 @@ export const PublicBookingPage: React.FC<Props> = ({
 
                           {/* Right: Price & Button */}
                           <div className="shrink-0 flex flex-col items-end justify-center border-l border-gray-100 pl-3 ml-1 gap-1.5">
-                            {s.price > 0 && <span className="font-black text-xs text-gray-900 leading-none">¥ {s.price.toLocaleString()}</span>}
+                            {s.price > 0 && <span className="font-black text-xs text-gray-900 leading-none">R$ {s.price.toLocaleString()}</span>}
                             <span 
                               className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 rounded-lg text-white shadow-sm"
                               style={{ backgroundColor: primaryColor }}
@@ -585,7 +586,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                         </div>
                         <div className="flex justify-between items-center border-t border-gray-100/50 pt-4">
                           <div>
-                            {s.price > 0 && <span className="font-black text-base text-gray-900 leading-none tracking-wide">¥ {s.price.toLocaleString()}</span>}
+                            {s.price > 0 && <span className="font-black text-base text-gray-900 leading-none tracking-wide">R$ {s.price.toLocaleString()}</span>}
                           </div>
                           <span 
                             className="text-xs font-black uppercase tracking-widest px-6 py-2.5 rounded-xl text-white text-center shadow-sm"
@@ -626,7 +627,7 @@ export const PublicBookingPage: React.FC<Props> = ({
                     </div>
                     <div>
                       <p className="font-black text-gray-900 text-xl tracking-tight">{selectedServices.length} {selectedServices.length === 1 ? 'serviço selecionado' : 'serviços selecionados'}</p>
-                      <p className="text-gray-400 text-sm font-medium">Duração: <b>{formatDurationFriendly(totalDuration)}</b> • <b>¥ {totalPrice.toLocaleString()}</b></p>
+                      <p className="text-gray-400 text-sm font-medium">Duração: <b>{formatDurationFriendly(totalDuration)}</b> • <b>R$ {totalPrice.toLocaleString()}</b></p>
                     </div>
                   </div>
                   <button 
@@ -758,21 +759,21 @@ export const PublicBookingPage: React.FC<Props> = ({
                       required
                       type="tel"
                       inputMode="numeric"
-                      maxLength={13}
+                      maxLength={15}
                       className="w-full pl-16 pr-6 py-5 rounded-3xl bg-gray-50 border-2 border-gray-300 shadow-sm focus-border-dynamic focus:bg-white focus:ring-0 text-gray-900 outline-none transition-all font-mono font-bold text-lg placeholder:text-gray-400"
                       value={clientData.phone}
                       onChange={e => handlePhoneChange(e.target.value)}
-                      placeholder="090 0000 0000"
+                      placeholder="(11) 90000-0000"
                     />
                   </div>
                   {/* Digit counter */}
                   <div className="flex justify-end px-2 mt-1">
                     <span className={`text-[10px] font-bold tabular-nums transition-colors ${
-                      rawPhoneDigits.length === 11 ? 'text-green-500' :
+                      (rawPhoneDigits.length === 10 || rawPhoneDigits.length === 11) ? 'text-green-500' :
                       rawPhoneDigits.length > 0    ? 'text-amber-500' : 'text-gray-300'
                     }`}>
                       {rawPhoneDigits.length}/11 dígitos
-                      {rawPhoneDigits.length === 11 && ' ✓'}
+                      {(rawPhoneDigits.length === 10 || rawPhoneDigits.length === 11) && ' ✓'}
                     </span>
                   </div>
                 </div>
