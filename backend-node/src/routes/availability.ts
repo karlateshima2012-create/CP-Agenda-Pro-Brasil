@@ -1,8 +1,76 @@
 import { Router } from 'express';
 import { prisma } from '../server.js';
 import { toZonedTime } from 'date-fns-tz';
+import { requireAuth, AuthRequest } from '../middlewares/auth.js';
 
 const router = Router();
+
+// Obter disponibilidade (Admin Dashboard)
+router.get('/', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const accountId = req.user?.accountId;
+    if (!accountId) return res.status(401).json({ error: 'Não autorizado' });
+
+    const availability = await prisma.availability.findFirst({
+      where: { account_id: accountId }
+    });
+
+    if (!availability) {
+      return res.json({ workingHours: [], intervalMinutes: 30 });
+    }
+
+    res.json({
+      workingHours: typeof availability.working_hours === 'string' 
+        ? JSON.parse(availability.working_hours) 
+        : availability.working_hours,
+      intervalMinutes: availability.interval_minutes
+    });
+
+  } catch (error) {
+    console.error('Get availability error:', error);
+    res.status(500).json({ error: 'Erro interno no servidor' });
+  }
+});
+
+// Salvar disponibilidade (Admin Dashboard)
+router.put('/', requireAuth, async (req: AuthRequest, res) => {
+  try {
+    const accountId = req.user?.accountId;
+    if (!accountId) return res.status(401).json({ error: 'Não autorizado' });
+
+    const { workingHours, intervalMinutes } = req.body;
+
+    const existing = await prisma.availability.findFirst({
+      where: { account_id: accountId }
+    });
+
+    if (existing) {
+      await prisma.availability.updateMany({
+        where: { account_id: accountId },
+        data: {
+          working_hours: workingHours,
+          interval_minutes: intervalMinutes || 30
+        }
+      });
+    } else {
+      await prisma.availability.create({
+        data: {
+          account_id: accountId,
+          working_hours: workingHours,
+          interval_minutes: intervalMinutes || 30
+        }
+      });
+    }
+
+    res.json({ success: true });
+
+  } catch (error) {
+    console.error('Update availability error:', error);
+    res.status(500).json({ error: 'Erro interno no servidor' });
+  }
+});
+
+// Motor de slots públicos
 
 router.get('/slots/:accountId', async (req, res) => {
   try {
@@ -18,8 +86,8 @@ router.get('/slots/:accountId', async (req, res) => {
     const accId = parseInt(accountId);
 
     // Buscar configurações de disponibilidade
-    const availability = await prisma.availability.findUnique({
-      where: { accountId: accId }
+    const availability = await prisma.availability.findFirst({
+      where: { account_id: accId }
     });
 
     if (!availability) {
@@ -27,9 +95,9 @@ router.get('/slots/:accountId', async (req, res) => {
     }
 
     // Processar horários de trabalho
-    const workingHours = typeof availability.workingHours === 'string' 
-      ? JSON.parse(availability.workingHours) 
-      : availability.workingHours;
+    const workingHours = typeof availability.working_hours === 'string' 
+      ? JSON.parse(availability.working_hours) 
+      : availability.working_hours;
 
     const jsDayOfWeek = new Date(date + 'T12:00:00Z').getDay();
     const jsDayToPtDay: Record<number, string> = {
@@ -55,7 +123,7 @@ router.get('/slots/:accountId', async (req, res) => {
       return h * 60 + m;
     };
 
-    const interval = availability.intervalMinutes || 30;
+    const interval = availability.interval_minutes || 30;
     const times: { time: string, isAvailable: boolean }[] = [];
     const baseIntervalTimes: number[] = [];
 
@@ -77,16 +145,16 @@ router.get('/slots/:accountId', async (req, res) => {
 
     const appointments = await prisma.appointment.findMany({
       where: {
-        accountId: accId,
-        startAt: { gte: startOfDay, lte: endOfDay },
+        account_id: accId,
+        start_at: { gte: startOfDay, lte: endOfDay },
         status: { notIn: ['canceled', 'rejected'] }
       }
     });
 
     const blockedDates = await prisma.blockedDate.findMany({
       where: {
-        accountId: accId,
-        date: new Date(`${date}T00:00:00Z`) // Ajuste conforme timezone DB
+        account_id: accId,
+        blocked_date: new Date(`${date}T00:00:00Z`) // Ajuste conforme timezone DB
       }
     });
 
@@ -111,15 +179,15 @@ router.get('/slots/:accountId', async (req, res) => {
       const slotEndTimestamp = slotStartTimestamp + (totalSlotDuration * 60000);
 
       const isBusy = appointments.some(a => {
-        const apptStartTimestamp = a.startAt.getTime();
-        const apptEndTimestamp = a.endAt ? a.endAt.getTime() : apptStartTimestamp + (a.duration * 60000);
+        const apptStartTimestamp = a.start_at.getTime();
+        const apptEndTimestamp = apptStartTimestamp + (a.duration * 60000);
         return (slotStartTimestamp < apptEndTimestamp && slotEndTimestamp > apptStartTimestamp);
       });
 
       const isBlockedInSlot = blockedDates.some(b => {
-        if (!b.startTime) return true;
-        const bStart = toMin(b.startTime);
-        const bEnd = b.endTime ? toMin(b.endTime) : bStart + interval;
+        if (!b.start_time) return true;
+        const bStart = toMin(b.start_time.toISOString().substring(11, 16));
+        const bEnd = b.end_time ? toMin(b.end_time.toISOString().substring(11, 16)) : bStart + interval;
         const slotStart = toMin(timeStr);
         const slotEnd = slotStart + totalDuration;
         return (slotStart < bEnd && slotEnd > bStart);

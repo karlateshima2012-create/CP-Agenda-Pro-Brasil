@@ -22,24 +22,24 @@ router.get('/profile/:id', async (req, res) => {
 
     // Buscar Serviços
     const services = await prisma.service.findMany({
-      where: { accountId },
+      where: { account_id: accountId },
       orderBy: { id: 'asc' }
     });
 
     // Buscar Disponibilidade
-    const availability = await prisma.availability.findUnique({
-      where: { accountId }
+    const availability = await prisma.availability.findFirst({
+      where: { account_id: accountId }
     });
 
     // Buscar Bloqueios
     const blockedDates = await prisma.blockedDate.findMany({
-      where: { accountId }
+      where: { account_id: accountId }
     });
 
     // Mesclar bloqueios na availability
     const availData = availability ? {
       ...availability,
-      workingHours: typeof availability.workingHours === 'string' ? JSON.parse(availability.workingHours) : availability.workingHours,
+      workingHours: typeof availability.working_hours === 'string' ? JSON.parse(availability.working_hours) : availability.working_hours,
       blockedDates: blockedDates
     } : null;
 
@@ -50,17 +50,16 @@ router.get('/profile/:id', async (req, res) => {
     
     const appointments = await prisma.appointment.findMany({
       where: {
-        accountId,
-        startAt: { gte: yesterday },
+        account_id: accountId,
+        start_at: { gte: yesterday },
         status: { notIn: ['canceled', 'rejected'] }
       },
       select: {
         id: true,
-        startAt: true,
-        endAt: true,
+        start_at: true,
         duration: true,
         status: true,
-        serviceIds: true
+        service_id: true
       }
     });
 
@@ -69,35 +68,34 @@ router.get('/profile/:id', async (req, res) => {
       profile: {
         id: user.account.id,
         name: user.account.name,
-        contact_phone: user.account.contactPhone,
+        contact_phone: user.account.owner_name,
         status: user.account.status,
-        plan_type: user.account.planType,
-        plan_expires_at: user.account.planExpiresAt,
-        primary_color: user.account.primaryColor,
-        secondary_color: user.account.secondaryColor,
-        short_description: user.account.shortDescription,
-        services_title: user.account.servicesTitle,
-        services_subtitle: user.account.servicesSubtitle,
-        cover_image: user.account.coverImage,
-        profile_image: user.account.profileImage,
-        view_mode: user.account.viewMode,
-        cover_opacity: user.account.coverOpacity,
-        lifetime_appointments: user.account.lifetimeAppointments,
-        created_at: user.account.createdAt
+        plan_type: user.account.plan_type,
+        plan_expires_at: user.account.plan_expires_at,
+        primary_color: user.account.primary_color,
+        secondary_color: user.account.secondary_color,
+        short_description: user.account.short_description,
+        services_title: user.account.services_title,
+        services_subtitle: user.account.services_subtitle,
+        cover_image: user.account.cover_image,
+        profile_image: user.account.profile_image,
+        view_mode: user.account.view_mode,
+        cover_opacity: user.account.cover_opacity,
+        lifetime_appointments: user.account.lifetime_appointments,
+        created_at: user.account.created_at
       },
-      services: services.map(s => ({
+      services: services.map((s: any) => ({
         id: s.id,
         name: s.name,
         description: s.description,
-        duration: s.duration,
+        duration: s.duration_min,
         price: s.price,
-        image_url: s.imageUrl
+        image_url: s.image_url
       })),
       availability: availData,
-      appointments: appointments.map(a => ({
+      appointments: appointments.map((a: any) => ({
         id: a.id,
-        start_at: a.startAt.toISOString(),
-        end_at: a.endAt ? a.endAt.toISOString() : null,
+        start_at: a.start_at.toISOString(),
         duration: a.duration,
         status: a.status
       }))
