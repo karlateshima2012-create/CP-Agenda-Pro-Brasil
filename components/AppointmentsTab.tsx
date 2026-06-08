@@ -32,11 +32,12 @@ interface Props {
 }
 
 // Funções utilitárias para WhatsApp
-function normalizePhoneToE164JP(phoneRaw: string) {
+function normalizePhoneToE164BR(phoneRaw: string) {
   const digits = (phoneRaw || '').replace(/\D/g, '');
   if (!digits) return '';
-  if (digits.startsWith('81')) return digits;
-  if (digits.startsWith('0')) return '81' + digits.slice(1);
+  if (digits.startsWith('55')) return digits;
+  if (digits.startsWith('0')) return '55' + digits.slice(1);
+  if (digits.length === 10 || digits.length === 11) return '55' + digits;
   return digits;
 }
 
@@ -66,7 +67,7 @@ function buildWhatsAppMessage(appt: any, status: 'confirmed' | 'rejected' | 'can
 }
 
 function openWhatsApp(phoneRaw: string, message: string) {
-  const phone = normalizePhoneToE164JP(phoneRaw);
+  const phone = normalizePhoneToE164BR(phoneRaw);
   if (!phone) {
     alert('Telefone do cliente não encontrado neste agendamento.');
     return;
@@ -79,7 +80,7 @@ function generateWhatsAppLink(appt: any, status: 'pending' | 'confirmed' | 'reje
   // botão WhatsApp "manual": usa a mensagem conforme status atual
   const st = (status === 'pending' ? 'confirmed' : status) as any; // ou crie msg específica p/ pending
   const msg = buildWhatsAppMessage(appt, st);
-  const phone = normalizePhoneToE164JP(appt.clientPhone);
+  const phone = normalizePhoneToE164BR(appt.clientPhone);
   return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : '#';
 }
 
@@ -552,7 +553,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                 <div className="flex flex-col gap-1 text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
                   <div className="flex flex-wrap items-center gap-3">
                     <span className="flex items-center gap-1"><Calendar size={10} /> {startDateJST.toLocaleDateString('pt-BR')}</span>
-                    <span className="flex items-center gap-1"><Phone size={10} /> {normalizePhoneToE164JP(appt.clientPhone) || '(Sem telefone)'}</span>
+                    <span className="flex items-center gap-1"><Phone size={10} /> {normalizePhoneToE164BR(appt.clientPhone) || '(Sem telefone)'}</span>
                   </div>
                   {appt.clientEmail && (
                     <div className="flex items-center gap-1">
@@ -848,7 +849,7 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
                     <div className="flex flex-col gap-1 px-2 text-xs text-gray-500 font-bold">
                       <div className="flex items-center gap-3">
                         <Phone size={14} />
-                        {normalizePhoneToE164JP(appt.clientPhone) || '(Sem telefone)'}
+                        {normalizePhoneToE164BR(appt.clientPhone) || '(Sem telefone)'}
                       </div>
                       {appt.clientEmail && (
                         <div className="flex items-center gap-3">

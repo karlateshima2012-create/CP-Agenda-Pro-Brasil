@@ -271,7 +271,7 @@ export const AdminDashboard: React.FC<Props> = ({ users, onAddUser, onUpdateAdmi
     const baseUrl = window.location.origin;
     let phone = createdUser.contactPhone.replace(/\D/g, '');
     if (phone.startsWith('0')) phone = phone.substring(1);
-    const cleanPhone = phone.startsWith('81') ? phone : '81' + phone;
+    const cleanPhone = phone.startsWith('55') ? phone : (phone.length >= 10 ? '55' + phone : phone);
     const message = `*Sua agenda profissional está pronta*\n\nO acesso ao CP Agenda Pro já foi criado para você.\n\n🌐 *Site Oficial:*\nhttps://saibamaiscpagendapro.creativeprintjp.com/\n(Basta clicar em 'Login' para acessar seu painel)\n\n🔗 *Link Direto do Sistema:*\n${baseUrl}\n\n📧 *E-mail:*\n${createdUser.email}\n\n🔑 *Senha Provisória:*\n${createdUser.password}\n\nNo primeiro acesso, o sistema irá redirecionar automaticamente para a alteração de senha, que é obrigatória para sua segurança.`;
     window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
   };
