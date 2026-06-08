@@ -11,6 +11,7 @@ model Account {
   id                    Int       @id @default(autoincrement())
   name                  String    @db.VarChar(255)
   owner_name            String?   @default("") @db.VarChar(255)
+  contact_phone         String?   @default("") @db.VarChar(50)
   status                String?   @default("active")
   plan_type             String?   @default("6m")
   plan_expires_at       DateTime?
