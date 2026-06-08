@@ -21,6 +21,26 @@ export const prisma = new PrismaClient();
 app.use(cors());
 app.use(express.json());
 
+app.use((req, res, next) => {
+  const originalJson = res.json;
+  res.json = function (body) {
+    if (res.statusCode >= 400) {
+      if (body && typeof body === 'object' && !('ok' in body)) {
+        body.ok = false;
+      }
+      return originalJson.call(this, body);
+    }
+    if (body && typeof body === 'object' && !('ok' in body)) {
+      // Remove o success: true redundante se houver
+      if (body.success === true) delete body.success;
+      return originalJson.call(this, { ok: true, data: body });
+    }
+    return originalJson.call(this, body);
+  };
+  next();
+});
+
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'CP Agenda Pro Brasil - Node.js API is running' });
 });
