@@ -56,9 +56,9 @@ router.get('/profiles', requireAuth, requireSuperAdmin, async (req: AuthRequest,
 // Criar novo usuário e conta
 router.post('/users', requireAuth, requireSuperAdmin, async (req: AuthRequest, res) => {
   try {
-    const { email, password, name, accountName, planType, planExpiresAt } = req.body;
+    const { email, password, companyName, ownerName, contactPhone, planType, planExpiresAt } = req.body;
 
-    if (!email || !password || !accountName) {
+    if (!email || !password || !companyName || !ownerName) {
       return res.status(400).json({ error: 'Dados insuficientes' });
     }
 
@@ -71,9 +71,12 @@ router.post('/users', requireAuth, requireSuperAdmin, async (req: AuthRequest, r
 
     const account = await prisma.account.create({
       data: {
-        name: accountName,
+        name: companyName,
+        owner_name: ownerName,
+        contact_phone: contactPhone || '',
         plan_type: planType || '6m',
-        plan_expires_at: planExpiresAt ? new Date(planExpiresAt) : new Date(Date.now() + 180 * 24 * 60 * 60 * 1000)
+        plan_expires_at: planExpiresAt ? new Date(planExpiresAt) : new Date(Date.now() + 180 * 24 * 60 * 60 * 1000),
+        status: 'active'
       }
     });
 
@@ -81,14 +84,14 @@ router.post('/users', requireAuth, requireSuperAdmin, async (req: AuthRequest, r
       data: {
         account_id: account.id,
         role: 'client',
-        name: name || accountName,
+        name: ownerName,
         email,
         password_hash: hash,
         must_change_password: true // Força a troca de senha no primeiro login
       }
     });
 
-    res.json({ success: true });
+    res.json({ success: true, id: account.id });
 
   } catch (error) {
     console.error('Create user error:', error);
