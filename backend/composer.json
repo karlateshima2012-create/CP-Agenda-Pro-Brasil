@@ -1,0 +1,15 @@
+{
+    "name": "karlateshima/backend",
+    "authors": [
+        {
+            "name": "Karlateshima",
+            "email": "karla.teshima.2012@gmail.com"
+        }
+    ],
+    "require-dev": {
+        "larastan/larastan": "^3.0"
+    },
+    "require": {
+        "phpmailer/phpmailer": "^7.0"
+    }
+}

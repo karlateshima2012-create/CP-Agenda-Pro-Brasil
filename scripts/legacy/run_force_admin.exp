@@ -1,0 +1,33 @@
+#!/usr/bin/expect -f
+set timeout 60
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set db_user "u176367625_cpagendakt"
+set db_pass "u5RjUpN\$4/rX"
+set db_name "u176367625_CPagendaPro"
+
+spawn scp -P $port -o StrictHostKeyChecking=no /Users/karlateshima/Developer/cp_agenda_pro/scripts/force_admin_role.sql $user@$host:~/force_admin_role.sql
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        send "mysql -u $db_user -p'$db_pass' $db_name < force_admin_role.sql\r"
+        expect "$ "
+        send "rm force_admin_role.sql\r"
+        send "exit\r"
+    }
+}
+expect eof

@@ -1,0 +1,39 @@
+#!/usr/bin/expect -f
+set timeout 120
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set remote_path_sub "domains/creativeprintjp.com/public_html/cpagendapro"
+set local_file "frontend_final.zip"
+
+# 1. Upload
+spawn scp -P $port -o StrictHostKeyChecking=no $local_file $user@$host:frontend_final.zip
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+# 2. SSH to unzip
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        # Deploy to subdomain
+        send "unzip -o frontend_final.zip -d $remote_path_sub\r"
+        expect "$ "
+        
+        # Cleanup
+        send "rm frontend_final.zip\r"
+        expect "$ "
+        
+        send "exit\r"
+    }
+}
+expect eof

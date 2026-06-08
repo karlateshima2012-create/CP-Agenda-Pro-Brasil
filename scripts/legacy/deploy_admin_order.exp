@@ -1,0 +1,17 @@
+#!/usr/bin/expect -f
+set timeout 120
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set remote_path "domains/creativeprintjp.com/public_html/cpagendapro/api/routes/admin.php"
+set local_file "deploy_hostinger/public_html/api/routes/admin.php"
+
+spawn scp -P $port -o StrictHostKeyChecking=no $local_file $user@$host:$remote_path
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

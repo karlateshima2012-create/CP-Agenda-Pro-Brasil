@@ -1,0 +1,32 @@
+#!/usr/bin/expect -f
+set timeout 60
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set node_path "/opt/alt/alt-nodejs24/root/usr/bin/node"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+send "cd ~/api-bridge\r"
+expect "$ "
+
+# Matar processo na porta 3000 (usando killall node para simplicidade se as outras falharem)
+send "killall node\r"
+expect "$ "
+send "sleep 2\r"
+expect "$ "
+
+# Iniciar API
+send "nohup $node_path dist/index.js > api.log 2>&1 &\r"
+expect "$ "
+send "sleep 3\r"
+expect "$ "
+send "cat api.log\r"
+expect "$ "
+
+send "exit\r"
+expect eof

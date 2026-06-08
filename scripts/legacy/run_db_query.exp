@@ -1,0 +1,19 @@
+#!/usr/bin/expect -f
+set timeout 30
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set query [lindex $argv 0]
+set db_pass {u5RjUpN$4/rX}
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+send "echo \"$query\" | mysql -h 127.0.0.1 -u u176367625_cpagendakt -p'$db_pass' u176367625_CPagendaPro\r"
+expect "$ "
+
+send "exit\r"
+expect eof

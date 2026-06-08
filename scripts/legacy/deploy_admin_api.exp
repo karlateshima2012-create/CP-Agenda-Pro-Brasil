@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+set timeout 60
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+
+# Path to the local file
+set local_file "/Users/karlateshima/Developer/cp_agenda_pro/deploy_hostinger/public_html/api/routes/admin.php"
+# Correct remote path on Hostinger
+set remote_path "u176367625@46.202.186.144:public_html/api/routes/admin.php"
+
+spawn scp -P $port -o StrictHostKeyChecking=no $local_file $remote_path
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

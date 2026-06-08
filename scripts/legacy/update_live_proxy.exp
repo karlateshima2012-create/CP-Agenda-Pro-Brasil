@@ -1,0 +1,20 @@
+#!/usr/bin/expect -f
+set timeout 60
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set frontend_root "domains/creativeprintjp.com/public_html/cpagendapro"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+send "cd ~/$frontend_root\r"
+expect "$ "
+send "sed -i 's/42421/42425/g' proxy.php\r"
+expect "$ "
+
+send "exit\r"
+expect eof

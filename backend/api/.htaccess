@@ -1,0 +1,29 @@
+# ✅ SECURITY [M-10]: HTTP Security Headers
+# Protects against XSS, clickjacking, MIME sniffing and information leakage
+
+<IfModule mod_headers.c>
+    # Prevent MIME-type sniffing attacks
+    Header always set X-Content-Type-Options "nosniff"
+
+    # Prevent clickjacking — page cannot be embedded in iframes
+    Header always set X-Frame-Options "DENY"
+
+    # Legacy XSS protection for older browsers
+    Header always set X-XSS-Protection "1; mode=block"
+
+    # Limit referrer information leakage
+    Header always set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Remove PHP version from headers (information disclosure)
+    Header always unset X-Powered-By
+
+    # Content Security Policy
+    # Allows: self, Google Fonts, inline styles (for Tailwind), blob for file handling
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' fonts.googleapis.com; font-src fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self'; frame-ancestors 'none';"
+</IfModule>
+
+# Route all requests through index.php (PHP Router)
+RewriteEngine On
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^(.*)$ index.php [QSA,L]

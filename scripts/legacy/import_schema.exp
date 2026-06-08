@@ -1,0 +1,47 @@
+#!/usr/bin/expect -f
+set timeout 300
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+
+set db_user "u176367625_cpagendakt"
+# Escaping the $ sign for Tcl
+set db_pass "u5RjUpN\$4/rX"
+set db_name "u176367625_CPagendaPro"
+
+# 1. Upload schema.sql
+spawn scp -P $port -o StrictHostKeyChecking=no schema.sql $user@$host:~/
+expect "password:"
+send "$password\r"
+expect "100%"
+expect eof
+
+# 2. Import schema
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+# Usamos aspas simples para o shell não interpretar o $ da senha
+send "mysql -u $db_user -p'$db_pass' $db_name < ~/schema.sql\r"
+expect "$ "
+
+# Seed a user
+send "php -r 'echo password_hash(\"password1234\", PASSWORD_DEFAULT);' > ~/pw.txt\r"
+expect "$ "
+
+send "hash=\$(cat ~/pw.txt)\r"
+expect "$ "
+
+send "mysql -u $db_user -p'$db_pass' $db_name -e \"INSERT INTO cp_agenda_accounts (name, status) VALUES ('CP Demo', 'active');\"\r"
+expect "$ "
+
+send "mysql -u $db_user -p'$db_pass' $db_name -e \"INSERT INTO cp_agenda_users (account_id, role, name, email, password_hash) VALUES (LAST_INSERT_ID(), 'super_admin', 'Suporte', 'suporte@creativeprintjp.com', '\$hash');\"\r"
+expect "$ "
+
+send "rm ~/schema.sql ~/pw.txt\r"
+expect "$ "
+
+send "exit\r"
+expect eof

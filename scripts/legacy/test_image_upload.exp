@@ -1,0 +1,57 @@
+#!/usr/bin/expect -f
+
+set timeout 30
+set password "23KDHkt10cp$"
+set user "u176367625"
+set host "46.202.186.144"
+set port "65002"
+set cookie_file "cookie_img.txt"
+
+# 0. Upload the check script
+spawn scp -P $port -o StrictHostKeyChecking=no scripts/check_length_remote.php $user@$host:domains/creativeprintjp.com/public_html/cpagendapro/check_length_remote.php
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+# Generate a large base64 string (simulated ~6MB)
+set large_image "data:image/jpeg;base64,"
+for {set i 0} {$i < 80000} {incr i} {
+    append large_image "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+}
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        # 1. Login
+        send "curl -c $cookie_file -X POST -H 'Content-Type: application/json' -d '{\"email\":\"suporte@creativeprintjp.com\",\"password\":\"password1234\"}' https://cpagendapro.creativeprintjp.com/api/auth/login\r"
+        expect "$ "
+
+        # 2. Upload Profile Image (PATCH)
+        # We need to be careful with escaping quotes in the JSON
+        set payload "{\"profileImage\":\"$large_image\"}"
+        
+        # Use a temporary file for the payload
+        send "echo '$payload' > payload.json\r"
+        expect "$ "
+        
+        send "curl -b $cookie_file -X PATCH -H 'Content-Type: application/json' -d @payload.json https://cpagendapro.creativeprintjp.com/api/me/profile\r"
+        expect "$ "
+
+        # 3. Verify Length using the uploaded script
+        send "cd domains/creativeprintjp.com/public_html/cpagendapro && php check_length_remote.php\r"
+        expect "$ "
+        
+        # Cleanup
+        send "rm $cookie_file payload.json check_length_remote.php\r"
+        send "exit\r"
+    }
+}
+expect eof

@@ -1,0 +1,33 @@
+#!/usr/bin/expect -f
+set timeout 120
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set remote_path "domains/creativeprintjp.com/public_html/cpagendapro"
+set local_script "scripts/backfill_end_datetime.php"
+
+spawn scp -P $port -o StrictHostKeyChecking=no $local_script $user@$host:$remote_path/backfill_end_datetime.php
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        send "cd $remote_path && php backfill_end_datetime.php\r"
+        expect "$ "
+        send "rm backfill_end_datetime.php\r"
+        expect "$ "
+        send "exit\r"
+    }
+}
+expect eof

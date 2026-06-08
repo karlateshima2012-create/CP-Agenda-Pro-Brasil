@@ -1,0 +1,61 @@
+#!/usr/bin/expect -f
+set timeout 300
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set node_path "/opt/alt/alt-nodejs24/root/usr/bin/node"
+set npm_path "/opt/alt/alt-nodejs24/root/usr/bin/npm"
+set frontend_root "domains/creativeprintjp.com/public_html/cpagendapro"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+# 1. Frontend Activation
+send "cd ~/$frontend_root\r"
+expect "$ "
+# Limpar arquivos antigos (menos .htaccess e proxy.php que já estão lá e configurados)
+send "rm -rf assets index.html\r"
+expect "$ "
+send "unzip -o ~/frontend_v3.zip -d .\r"
+expect "$ "
+# Mover da pasta 'dist' extraída para a raiz do subdominio
+send "cp -r dist/* .\r"
+expect "$ "
+send "rm -rf dist\r"
+expect "$ "
+
+# 2. API Bridge Activation
+send "cd ~\r"
+expect "$ "
+send "rm -rf api-bridge\r"
+expect "$ "
+send "mkdir api-bridge\r"
+expect "$ "
+send "unzip -o ~/api_bridge_prod.zip -d api-bridge\r"
+expect "$ "
+
+send "cd ~/api-bridge\r"
+expect "$ "
+send "cp .env.production .env\r"
+expect "$ "
+send "sed -i 's/PORT=3000/PORT=42421/' .env\r"
+expect "$ "
+send "sed -i 's/PORT=3001/PORT=42421/' .env\r"
+expect "$ "
+
+send "$npm_path install --production\r"
+expect "$ "
+
+# 3. Restart
+send "pkill -u $user -9 node\r"
+expect "$ "
+send "sleep 2\r"
+expect "$ "
+send "nohup $node_path dist/index.js > api.log 2>&1 &\r"
+expect "$ "
+
+send "exit\r"
+expect eof

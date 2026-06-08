@@ -1,0 +1,55 @@
+#!/usr/bin/expect -f
+set timeout 300
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "Creative23SSHcp@"
+set remote_path "domains/creativeprintjp.com/public_html/cpagendapro"
+
+# Note: This script assumes 'backend_deploy.zip' is already created by the caller (shell script)
+# or we can try to create it here if we use system command.
+
+# Let's use system command to zip from the new 'backend' folder
+# We want 'api' folder and 'migrate.php' and 'database' folder.
+# The server expects 'api' to be in public_html/cpagendapro/api
+# We will zip 'backend/api' as 'api'
+
+system "cd backend && zip -r ../backend_deploy.zip api database migrate.php .env.example"
+
+spawn scp -P $port -o StrictHostKeyChecking=no backend_deploy.zip $user@$host:backend_deploy.zip
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        # Move to project root
+        send "cd $remote_path\r"
+        expect "$ "
+        
+        # Unzip (api will overwrite existing api folder)
+        send "unzip -o ~/backend_deploy.zip\r"
+        expect "$ "
+        
+        # Run migrations (if desired, or just leave it there)
+        # We can run it: php migrate.php
+        send "php migrate.php\r"
+        expect "$ "
+        
+        # Clean up zip
+        send "rm ~/backend_deploy.zip\r"
+        expect "$ "
+
+        send "exit\r"
+    }
+}
+expect eof

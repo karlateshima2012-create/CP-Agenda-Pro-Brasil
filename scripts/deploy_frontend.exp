@@ -1,0 +1,38 @@
+#!/usr/bin/expect -f
+
+set timeout 300
+set password "Creative23SSHcp@"
+set user "u176367625"
+set host "46.202.186.144"
+set port "65002"
+
+# Transfer zip
+spawn scp -P 65002 -o StrictHostKeyChecking=no dist.zip u176367625@46.202.186.144:domains/creativeprintjp.com/public_html/cpagendapro/
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+# Unzip and cleanup
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        send "cd domains/creativeprintjp.com/public_html/cpagendapro/ && rm -rf dist_old && mkdir -p dist_old\r"
+        expect "$ "
+        send "cp -r assets index.html dist_old/ 2>/dev/null || true\r"
+        expect "$ "
+        send "unzip -o dist.zip\r"
+        expect "$ "
+        send "rm dist.zip\r"
+        expect "$ "
+        send "exit\r"
+    }
+}
+expect eof

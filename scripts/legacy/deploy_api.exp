@@ -1,0 +1,31 @@
+#!/usr/bin/expect -f
+set timeout 300
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+
+# Zip the api folder locally first (need to do this outside)
+# Transfer zip
+spawn scp -P 65002 -o StrictHostKeyChecking=no api_deploy.zip u176367625@46.202.186.144:domains/creativeprintjp.com/public_html/cpagendapro/
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+# Unzip
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        send "cd domains/creativeprintjp.com/public_html/cpagendapro/ && unzip -o api_deploy.zip && rm api_deploy.zip\r"
+        send "exit\r"
+    }
+}
+expect eof

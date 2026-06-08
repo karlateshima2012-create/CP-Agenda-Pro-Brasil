@@ -1,0 +1,45 @@
+#!/usr/bin/expect -f
+set timeout 120
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set remote_path "domains/creativeprintjp.com/public_html/cpagendapro"
+
+# 1. Deploy auth.php
+spawn scp -P $port -o StrictHostKeyChecking=no deploy_hostinger/public_html/api/routes/auth.php $user@$host:$remote_path/api/routes/auth.php
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+# 2. Deploy Frontend
+spawn scp -P $port -o StrictHostKeyChecking=no frontend_blocked_fix.zip $user@$host:frontend_blocked_fix.zip
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        send "unzip -o frontend_blocked_fix.zip -d $remote_path\r"
+        expect "$ "
+        
+        send "rm frontend_blocked_fix.zip\r"
+        expect "$ "
+        
+        send "exit\r"
+    }
+}
+expect eof

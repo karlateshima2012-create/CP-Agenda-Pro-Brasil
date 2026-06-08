@@ -1,0 +1,21 @@
+#!/usr/bin/expect -f
+set timeout 60
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+# Escaping the $ in the MySQL password and using single quotes
+send "mysql -h 127.0.0.1 -u u176367625_cpagendakt -pu5RjUpN\\\$4/rX u176367625_CPagendaPro -e 'SHOW TABLES;'\r"
+expect "$ "
+
+send "mysql -h 127.0.0.1 -u u176367625_cpagendakt -pu5RjUpN\\\$4/rX u176367625_CPagendaPro -e 'DESCRIBE cp_agenda_accounts;'\r"
+expect "$ "
+
+send "exit\r"
+expect eof

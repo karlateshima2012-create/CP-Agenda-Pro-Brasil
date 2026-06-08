@@ -1,0 +1,40 @@
+#!/usr/bin/expect -f
+
+set timeout 20
+set password "23KDHkt10cp$"
+set user "u176367625"
+set host "46.202.186.144"
+set port "65002"
+set local_script "scripts/check_schema_remote.php"
+set remote_script "domains/creativeprintjp.com/public_html/cpagendapro/check_schema_remote.php"
+set run_path "domains/creativeprintjp.com/public_html/cpagendapro"
+
+# 1. SCP the file
+spawn scp -P $port -o StrictHostKeyChecking=no $local_script $user@$host:$remote_script
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+# 2. SSH to run it
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        send "cd $run_path && php check_schema_remote.php\r"
+        expect "$ "
+        
+        # Cleanup
+        send "rm check_schema_remote.php\r"
+        expect "$ "
+        
+        send "exit\r"
+    }
+}
+expect eof

@@ -1,0 +1,17 @@
+RewriteEngine On
+
+<IfModule mod_headers.c>
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "max-age=0, no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires "Wed, 11 Jan 1984 05:00:00 GMT"
+    </FilesMatch>
+</IfModule>
+
+# Forward /api requests to the api folder with path param
+RewriteRule ^api/(.*)$ api/index.php?path=$1 [QSA,L]
+
+# For all other requests, if not a real file or directory, serve the SPA
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ index.html [L]

@@ -1,0 +1,24 @@
+<IfModule mod_headers.c>
+    # Não fazer cache de arquivos HTML (Garante que a nova versão do index.html sempre seja carregada)
+    <FilesMatch "\.(html|htm)$">
+        Header set Cache-Control "no-cache, no-store, must-revalidate"
+        Header set Pragma "no-cache"
+        Header set Expires 0
+    </FilesMatch>
+
+    # Arquivos estáticos podem ser cacheados tranquilamente, pois o Vite sempre muda o nome (hash) deles
+    <FilesMatch "\.(js|css|png|jpg|jpeg|gif|svg|ico|woff2)$">
+        Header set Cache-Control "public, max-age=31536000, immutable"
+    </FilesMatch>
+</IfModule>
+
+# Redirecionamento para SPA (Single Page Application) - React Route Catch-All
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^index\.html$ - [L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
+  RewriteRule . /index.html [L]
+</IfModule>

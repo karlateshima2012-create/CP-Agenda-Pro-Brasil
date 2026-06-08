@@ -1,0 +1,37 @@
+#!/usr/bin/expect -f
+set timeout 300
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "Creative23SSHcp@"
+set remote_path "domains/creativeprintjp.com/public_html/cpagendapro"
+
+spawn scp -P $port -o StrictHostKeyChecking=no backend/fix_colors.php $user@$host:$remote_path/fix_colors.php
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        send "cd $remote_path\r"
+        expect "$ "
+        
+        send "php fix_colors.php\r"
+        expect "$ "
+        
+        send "rm fix_colors.php\r"
+        expect "$ "
+
+        send "exit\r"
+    }
+}
+expect eof

@@ -1,0 +1,18 @@
+#!/usr/bin/expect -f
+set password "creative#2024"
+set timeout 30
+
+spawn ssh -p 65002 u176367625@46.202.186.144
+
+expect "password:"
+send "$password\r"
+
+expect "$ "
+send "cd domains/creativeprintjp.com/public_html/cpagendapro/api\r"
+
+expect "$ "
+send "php -r 'require \"config.php\"; require \"lib/Db.php\"; Db::query(\"ALTER TABLE cp_agenda_accounts ADD COLUMN owner_name VARCHAR(255) DEFAULT NULL AFTER name\"); echo \"DB FIXED\\n\";'\r"
+
+expect "$ "
+send "exit\r"
+expect eof

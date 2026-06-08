@@ -1,0 +1,39 @@
+#!/usr/bin/expect -f
+set timeout 120
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+
+# 1. Upload do bundle usando sftp (mais estável com senhas via expect se scp falhar)
+spawn sftp -P $port $user@$host
+expect "password:"
+send "$password\r"
+expect "sftp>"
+send "put frontend_atomic_v1.zip\r"
+expect "sftp>"
+send "exit\r"
+expect eof
+
+# 2. SSH para descompactar e mover
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+# Limpar versões anteriores e extrair
+send "rm -rf ~/public_html/assets/*\r"
+expect "$ "
+send "unzip -o ~/frontend_atomic_v1.zip -d ~/public_html_temp\r"
+expect "$ "
+send "cp -r ~/public_html_temp/dist/* ~/public_html/\r"
+expect "$ "
+send "rm -rf ~/public_html_temp ~/frontend_atomic_v1.zip\r"
+expect "$ "
+
+# Verificar se .htaccess existe
+send "ls -la ~/public_html/.htaccess\r"
+expect "$ "
+
+send "exit\r"
+expect eof

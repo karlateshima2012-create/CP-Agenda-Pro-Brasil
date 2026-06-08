@@ -1,0 +1,19 @@
+#!/usr/bin/expect -f
+set timeout 60
+spawn scp -P 65002 -o StrictHostKeyChecking=no backend/check.php u176367625@46.202.186.144:domains/creativeprintjp.com/public_html/cpagendapro/check.php
+expect "password:"
+send "Creative23SSHcp@\r"
+expect eof
+
+spawn ssh -p 65002 -o StrictHostKeyChecking=no u176367625@46.202.186.144
+expect "password:"
+send "Creative23SSHcp@\r"
+expect "$ "
+send "cd domains/creativeprintjp.com/public_html/cpagendapro\r"
+expect "$ "
+send "php check.php\r"
+expect "$ "
+send "rm check.php\r"
+expect "$ "
+send "exit\r"
+expect eof

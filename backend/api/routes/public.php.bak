@@ -1,0 +1,17 @@
+<?php
+// deploy_hostinger/public_html/api/routes/public.php
+
+if (preg_match('/^public\/profile\/([^\/]+)$/', $path, $matches) && $method === 'GET') {
+    $idOrSlug = $matches[1];
+    
+    // Lookup by ID or Slug (assuming id for now for simplicity)
+    $profile = Db::fetch('SELECT id, name, status, plan_type, plan_expires_at, primary_color, secondary_color, short_description, services_title, services_subtitle, cover_image, profile_image, lifetime_appointments FROM cp_agenda_accounts WHERE id = ?', [$idOrSlug]);
+    
+    if (!$profile) {
+        Response::fail('Profile not found', 404);
+    }
+    
+    Response::ok($profile);
+}
+
+Response::fail('Not Found', 404);

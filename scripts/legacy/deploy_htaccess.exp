@@ -1,0 +1,18 @@
+#!/usr/bin/expect -f
+set timeout 60
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+
+set local_file "/Users/karlateshima/Developer/cp_agenda_pro/deploy_hostinger/public_html/.htaccess"
+set remote_file "u176367625@46.202.186.144:public_html/.htaccess"
+
+spawn scp -P $port -o StrictHostKeyChecking=no $local_file $remote_file
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

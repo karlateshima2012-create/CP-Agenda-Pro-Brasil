@@ -1,0 +1,30 @@
+#!/usr/bin/expect -f
+
+set timeout 20
+set password "23KDHkt10cp$"
+set user "u176367625"
+set host "46.202.186.144"
+set port "65002"
+set cookie_file "cookie_appt.txt"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        # 1. Login
+        send "curl -c $cookie_file -X POST -H 'Content-Type: application/json' -d '{\"email\":\"suporte@creativeprintjp.com\",\"password\":\"password1234\"}' https://cpagendapro.creativeprintjp.com/api/auth/login\r"
+        expect "$ "
+
+        # 2. Fetch Appointments (GET)
+        send "curl -b $cookie_file -X GET https://cpagendapro.creativeprintjp.com/api/appointments\r"
+        expect "$ "
+        
+        # Cleanup
+        send "rm $cookie_file\r"
+        send "exit\r"
+    }
+}
+expect eof

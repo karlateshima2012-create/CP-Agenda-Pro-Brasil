@@ -1,0 +1,20 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Top Left - Large Pink -->
+  <rect x="1" y="1" width="14" height="14" rx="3.5" fill="#ec248c"/>
+  
+  <!-- Bottom Left - Large Cyan -->
+  <rect x="1" y="17" width="14" height="14" rx="3.5" fill="#25aae1"/>
+  
+  <!-- Bottom Right - Large Yellow -->
+  <rect x="17" y="17" width="14" height="14" rx="3.5" fill="#fef200"/>
+  
+  <!-- Top Right Quadrant Grid -->
+  <!-- Small Yellow (Top Middle) -->
+  <rect x="17" y="1.5" width="6" height="6" rx="2" fill="#fef200"/>
+  
+  <!-- Small Cyan (Middle Middle) -->
+  <rect x="17" y="9.5" width="6" height="6" rx="2" fill="#25aae1"/>
+  
+  <!-- Small Pink (Middle Right) -->
+  <rect x="25" y="9.5" width="6" height="6" rx="2" fill="#ec248c"/>
+</svg>

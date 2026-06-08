@@ -1,0 +1,18 @@
+#!/usr/bin/expect -f
+set timeout 300
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set file [lindex $argv 0]
+set dest [lindex $argv 1]
+
+# Usar ponto para diretório atual (home) ou o caminho explícito
+spawn scp -P $port -o StrictHostKeyChecking=no $file $user@$host:$dest
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

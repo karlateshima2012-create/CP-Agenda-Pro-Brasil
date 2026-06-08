@@ -1,0 +1,30 @@
+#!/usr/bin/expect -f
+
+set timeout 20
+set password "23KDHkt10cp$"
+set user "u176367625"
+set host "46.202.186.144"
+set port "65002"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        # 1. Curl with Email
+        # Account 16
+        set payload "{\"account_id\":16,\"professional_id\":16,\"serviceId\":1,\"serviceName\":\"Email Test\",\"startAt\":\"2026-03-05 15:00:00\",\"duration\":30,\"clientName\":\"Email User\",\"clientPhone\":\"09099998888\",\"clientEmail\":\"test@example.com\"}"
+        
+        send "curl -X POST -H 'Content-Type: application/json' -d '$payload' https://cpagendapro.creativeprintjp.com/api/appointments/create\r"
+        expect "$ "
+        
+        # 2. Check DB
+        send "php -r \"require_once 'domains/creativeprintjp.com/public_html/api/lib/Db.php'; \\\$a = Db::fetch('SELECT * FROM cp_agenda_appointments WHERE client_email = \\'test@example.com\\' ORDER BY id DESC LIMIT 1'); print_r(\\\$a);\"\r"
+        expect "$ "
+        
+        send "exit\r"
+    }
+}
+expect eof

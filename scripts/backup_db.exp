@@ -1,0 +1,41 @@
+#!/usr/bin/expect -f
+set timeout 300
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set db_user "u176367625_cpagendakt"
+set db_pass "u5RjUpN\$4/rX"
+set db_name "u176367625_CPagendaPro"
+
+# Generate timestamp
+set date [timestamp -format %Y%m%d_%H%M%S]
+set backup_file "backup_${db_name}_${date}.sql.gz"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        # Create backups directory if not exists
+        send "mkdir -p ~/backups\r"
+        expect "$ "
+        
+        # Run mysqldump
+        send "mysqldump -h 127.0.0.1 -u $db_user -p'$db_pass' $db_name | gzip > ~/backups/$backup_file\r"
+        expect "$ "
+        
+        # List backup to confirm
+        send "ls -lh ~/backups/$backup_file\r"
+        expect "$ "
+        
+        # Optional: remove backups older than 7 days
+        send "find ~/backups -name 'backup_*.sql.gz' -mtime +7 -delete\r"
+        expect "$ "
+
+        send "exit\r"
+    }
+}
+expect eof

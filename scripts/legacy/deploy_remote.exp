@@ -1,0 +1,65 @@
+#!/usr/bin/expect -f
+set timeout 300
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+# 1. Preparar diretórios
+send "mkdir -p public_html/cpagendapro\r"
+expect "$ "
+send "mkdir -p api-bridge\r"
+expect "$ "
+
+# 2. Descompactar Frontend
+send "unzip -o ~/frontend_dist.zip -d ~/public_html/cpagendapro_tmp\r"
+expect "$ "
+send "cp -r ~/public_html/cpagendapro_tmp/dist/* ~/public_html/cpagendapro/\r"
+expect "$ "
+send "rm -rf ~/public_html/cpagendapro_tmp ~/frontend_dist.zip\r"
+expect "$ "
+
+# 3. Descompactar API
+send "unzip -o ~/api_bridge.zip -d ~/api-bridge\r"
+expect "$ "
+send "rm ~/api_bridge.zip\r"
+expect "$ "
+
+# 4. Configurar .htaccess para React (SPA)
+send "echo '<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /cpagendapro/
+  RewriteRule ^index\\.html$ - \[L\]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteCond %{REQUEST_FILENAME} !-l
+  RewriteRule . /cpagendapro/index.html \[L\]
+</IfModule>' > ~/public_html/cpagendapro/.htaccess\r"
+expect "$ "
+
+# 5. Instalar dependências da API (Node.js) e rodar Build
+send "cd ~/api-bridge\r"
+expect "$ "
+send "mv .env.production .env\r"
+expect "$ "
+# No Hostinger compartilhado, o npm costuma estar disponível.
+send "npm install --production\r"
+expect "$ "
+
+# 6. Rodar o Banco de Dados (PostgreSQL)
+# O Hostinger PostgreSQL costuma ser acessível via psql se tiver permissão, 
+# mas geralmente usamos o painel. No entanto, vou tentar rodar via comando.
+# Credenciais: u176367625_cpagendakt / u5RjUpN$4/rX @ localhost / u176367625_CPagendaPro
+send "PGPASSWORD='u5RjUpN$4/rX' psql -h localhost -U u176367625_cpagendakt -d u176367625_CPagendaPro -f schema_hostinger.sql\r"
+expect "$ "
+send "PGPASSWORD='u5RjUpN$4/rX' psql -h localhost -U u176367625_cpagendakt -d u176367625_CPagendaPro -f seed_admin.sql\r"
+expect "$ "
+
+# Finalizar
+send "exit\r"
+expect eof

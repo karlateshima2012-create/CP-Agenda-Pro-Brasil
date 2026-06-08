@@ -1,0 +1,48 @@
+#!/usr/bin/expect -f
+set timeout 300
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+
+# 1. Upload via SCP
+spawn scp -P $port -o StrictHostKeyChecking=no deploy.zip $user@$host:~/
+expect "password:"
+send "$password\r"
+expect "100%"
+expect eof
+
+# 2. SSH to unzip and clean up
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+# Matar processos node remanescentes para liberar memória se necessário
+send "pkill -9 -u $user node\r"
+expect "$ "
+
+send "cd ~/public_html\r"
+expect "$ "
+
+# Backup atual? O usuário pediu preparar o deploy, então vamos substituir.
+# Mas vamos ser cuidadosos com o .htaccess principal se ele for especial.
+# Na verdade o zip contém o .htaccess corrigido.
+
+send "unzip -o ~/deploy.zip -d .\r"
+expect "$ "
+
+# Garantir permissões
+send "find . -type d -exec chmod 755 {} \\;\r"
+expect "$ "
+send "find . -type f -exec chmod 644 {} \\;\r"
+expect "$ "
+
+send "rm ~/deploy.zip\r"
+expect "$ "
+
+send "ls -la api\r"
+expect "$ "
+
+send "exit\r"
+expect eof

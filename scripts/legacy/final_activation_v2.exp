@@ -1,0 +1,51 @@
+#!/usr/bin/expect -f
+set timeout 600
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set node_path "/opt/alt/alt-nodejs24/root/usr/bin/node"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+# 1. Ativar Frontend e Proxy (Corrigido caminhos)
+send "unzip -o ~/frontend_proxy_final.zip -d ~/temp_deploy\r"
+expect "$ "
+send "mkdir -p ~/public_html/cpagendapro\r"
+expect "$ "
+# Extrair o zip do frontend (que tem a pasta dist dentro)
+send "unzip -o ~/temp_deploy/frontend_dist_v2.zip -d ~/public_html/cpagendapro\r"
+expect "$ "
+# Mover os conteúdos de dist para a raiz da pasta cpagendapro
+send "mv ~/public_html/cpagendapro/dist/* ~/public_html/cpagendapro/\r"
+expect "$ "
+send "rmdir ~/public_html/cpagendapro/dist\r"
+expect "$ "
+# Mover proxy e htaccess
+send "mv ~/temp_deploy/proxy.php ~/public_html/cpagendapro/\r"
+expect "$ "
+send "mv ~/temp_deploy/.htaccess ~/public_html/cpagendapro/\r"
+expect "$ "
+send "rm -rf ~/temp_deploy ~/frontend_proxy_final.zip\r"
+expect "$ "
+
+# 2. Reiniciar API (Kill agressivo)
+send "cd ~/api-bridge\r"
+expect "$ "
+# Usar ps para achar o node e matar
+send "ps aux | grep node | grep dist/index.js | awk '{print $2}' | xargs kill -9\r"
+expect "$ "
+send "sleep 2\r"
+expect "$ "
+send "nohup $node_path dist/index.js > api.log 2>&1 &\r"
+expect "$ "
+send "sleep 3\r"
+expect "$ "
+send "cat api.log\r"
+expect "$ "
+
+send "exit\r"
+expect eof

@@ -1,0 +1,46 @@
+#!/usr/bin/expect -f
+set timeout 120
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set remote_path_sub "domains/creativeprintjp.com/public_html/cpagendapro"
+set remote_path_main "domains/creativeprintjp.com/public_html"
+set local_file "frontend_fix_mapping.zip"
+
+# 1. Upload
+spawn scp -P $port -o StrictHostKeyChecking=no $local_file $user@$host:frontend_fix_mapping.zip
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}
+
+# 2. SSH to unzip
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        # Deploy to subdomain
+        send "mkdir -p $remote_path_sub\r"
+        expect "$ "
+        send "unzip -o frontend_fix_mapping.zip -d $remote_path_sub\r"
+        expect "$ "
+        
+        # Deploy to main (if needed, user seems to use subdomain mostly but let's be safe)
+        # send "unzip -o frontend_fix_mapping.zip -d $remote_path_main\r"
+        # expect "$ "
+        
+        # Cleanup
+        send "rm frontend_fix_mapping.zip\r"
+        expect "$ "
+        
+        send "exit\r"
+    }
+}
+expect eof

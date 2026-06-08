@@ -1,0 +1,31 @@
+#!/usr/bin/expect -f
+
+set timeout 20
+set password "23KDHkt10cp$"
+set user "u176367625"
+set host "46.202.186.144"
+set port "65002"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    "$ " {
+        # Create a temporary PHP script to describe the table (using object access or simplified echo)
+        send "echo \"<?php require_once 'api/lib/Db.php'; \\\$cols = Db::fetchAll('DESCRIBE cp_agenda_accounts'); foreach(\\\$cols as \\\$c) { echo \\\$c['Field'] . ': ' . \\\$c['Type'] . '\\n'; }\" > check_schema.php\r"
+        expect "$ "
+        
+        # Run it
+        send "php check_schema.php\r"
+        expect "$ "
+        
+        # Clean up
+        send "rm check_schema.php\r"
+        expect "$ "
+        
+        send "exit\r"
+    }
+}
+expect eof

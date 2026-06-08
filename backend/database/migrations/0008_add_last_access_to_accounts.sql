@@ -1,0 +1,2 @@
+ALTER TABLE cp_agenda_accounts
+  ADD COLUMN IF NOT EXISTS last_access_at DATETIME DEFAULT NULL;

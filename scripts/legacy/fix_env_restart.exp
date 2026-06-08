@@ -1,0 +1,29 @@
+#!/usr/bin/expect -f
+set timeout 60
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set node_path "/opt/alt/alt-nodejs24/root/usr/bin/node"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+send "cd ~/api-bridge\r"
+expect "$ "
+# Rename or copy .env.production to .env
+send "cp .env.production .env\r"
+expect "$ "
+
+# Restart
+send "pkill -9 node\r"
+expect "$ "
+send "sleep 2\r"
+expect "$ "
+send "nohup $node_path dist/index.js > api.log 2>&1 &\r"
+expect "$ "
+
+send "exit\r"
+expect eof

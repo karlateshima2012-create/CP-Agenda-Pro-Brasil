@@ -1,0 +1,46 @@
+#!/usr/bin/expect -f
+set timeout 600
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+# 1. Instalar dependências da API (Node.js)
+send "cd ~/api-bridge\r"
+expect "$ "
+# Usar --production para ser mais rápido
+send "npm install --production\r"
+expect {
+    "added" { exp_continue }
+    "$ "
+}
+
+# 2. Rodar o Banco de Dados (PostgreSQL)
+# Escapar o $ no PGPASSWORD: u5RjUpN\$4/rX
+send "PGPASSWORD='u5RjUpN\$4/rX' psql -h localhost -U u176367625_cpagendakt -d u176367625_CPagendaPro -f schema_hostinger.sql\r"
+expect "$ "
+send "PGPASSWORD='u5RjUpN\$4/rX' psql -h localhost -U u176367625_cpagendakt -d u176367625_CPagendaPro -f seed_admin.sql\r"
+expect "$ "
+
+# 3. Iniciar a API (Usando pm2 se disponível, ou nohup)
+# Primeiro vamos verificar se pm2 existe
+send "pm2 -v\r"
+expect {
+    "pm2: command not found" {
+        send "nohup npm run start > api.log 2>&1 &\r"
+        expect "$ "
+    }
+    "." {
+        send "pm2 start dist/index.js --name cp-agenda-api\r"
+        expect "$ "
+    }
+}
+
+# Finalizar
+send "exit\r"
+expect eof

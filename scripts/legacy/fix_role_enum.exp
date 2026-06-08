@@ -1,0 +1,30 @@
+#!/usr/bin/expect -f
+set timeout 60
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+set db_user "u176367625_cpagendakt"
+set db_pass "u5RjUpN\$4/rX"
+set db_name "u176367625_CPagendaPro"
+
+# 1. Modify the column
+send "mysql -h 127.0.0.1 -u $db_user -p'$db_pass' $db_name -e \"ALTER TABLE cp_agenda_users MODIFY COLUMN role ENUM('super_admin', 'account_admin', 'staff', 'client') DEFAULT 'client';\"\r"
+expect "$ "
+
+# 2. Fix existing users with empty role
+send "mysql -h 127.0.0.1 -u $db_user -p'$db_pass' $db_name -e \"UPDATE cp_agenda_users SET role='client' WHERE role='';\"\r"
+expect "$ "
+
+# 3. Verify
+send "mysql -h 127.0.0.1 -u $db_user -p'$db_pass' $db_name -e 'SELECT id, email, role FROM cp_agenda_users;'\r"
+expect "$ "
+
+send "exit\r"
+expect eof

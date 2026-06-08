@@ -1,0 +1,19 @@
+#!/usr/bin/expect -f
+
+set timeout 300
+set password "23KDHkt10cp$"
+set user "u176367625"
+set host "46.202.186.144"
+set port "65002"
+set file [lindex $argv 0]
+set target [lindex $argv 1]
+
+# Transfer file
+spawn scp -P $port -o StrictHostKeyChecking=no $file $user@$host:$target
+expect {
+    "password:" {
+        send "$password\r"
+        exp_continue
+    }
+    eof
+}

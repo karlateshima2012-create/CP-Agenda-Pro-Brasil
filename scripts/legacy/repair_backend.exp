@@ -1,0 +1,43 @@
+#!/usr/bin/expect -f
+set timeout 120
+set port 65002
+set user "u176367625"
+set host "46.202.186.144"
+set password "23KDHkt10cp$"
+set path "domains/creativeprintjp.com/public_html/cpagendapro"
+
+# 1. Transferir dist_backend.zip
+spawn scp -P $port -o StrictHostKeyChecking=no api-bridge/dist_backend.zip $user@$host:~/api-bridge/
+expect "password:"
+send "$password\r"
+expect eof
+
+# 2. Restaurar e Reiniciar
+spawn ssh -p $port -o StrictHostKeyChecking=no $user@$host
+expect "password:"
+send "$password\r"
+expect "$ "
+
+# Extrair backend zip
+send "cd ~/api-bridge\r"
+expect "$ "
+send "unzip -o dist_backend.zip\r"
+expect "$ "
+
+# Copiar .htaccess e proxy.php para o frontend
+send "cp .htaccess proxy.php ~/$path/\r"
+expect "$ "
+
+# Matar processo na porta 42425 se existir
+send "ps aux | grep node | grep 42425 | awk '{print \$2}' | xargs kill -9 2>/dev/null || true\r"
+expect "$ "
+
+# Iniciar via nohup usando o caminho completo do node diretamente
+send "setsid nohup /opt/alt/alt-nodejs20/root/usr/bin/node dist/index.js > api.log 2>&1 &\r"
+expect "$ "
+send "sleep 5\r"
+expect "$ "
+send "ps aux | grep node\r"
+expect "$ "
+send "exit\r"
+expect eof
