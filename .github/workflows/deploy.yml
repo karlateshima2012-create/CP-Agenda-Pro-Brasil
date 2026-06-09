@@ -7,7 +7,7 @@ on:
 # Secrets necessários no repositório (Settings → Secrets → Actions):
 #   SSH_HOST         — IP ou domínio da VPS
 #   SSH_USER         — usuário SSH (ex: root)
-#   SSH_PRIVATE_KEY  — chave privada SSH (conteúdo do arquivo ~/.ssh/id_rsa)
+#   SSH_PASSWORD     — senha root da VPS
 #   SSH_PORT         — porta SSH (normalmente 22)
 
 jobs:
@@ -52,7 +52,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           source: "deploy-pkg"
           target: "/tmp/"
@@ -62,7 +62,7 @@ jobs:
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          password: ${{ secrets.SSH_PASSWORD }}
           port: ${{ secrets.SSH_PORT }}
           command_timeout: 12m
           script: |
