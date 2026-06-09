@@ -1,69 +1,102 @@
-name: CP Agenda Pro - Deploy Automático (VPS)
+name: Deploy — CP Agenda Pro
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
+
+# Secrets necessários no repositório (Settings → Secrets → Actions):
+#   SSH_HOST         — IP ou domínio da VPS
+#   SSH_USER         — usuário SSH (ex: root)
+#   SSH_PRIVATE_KEY  — chave privada SSH (conteúdo do arquivo ~/.ssh/id_rsa)
+#   SSH_PORT         — porta SSH (normalmente 22)
 
 jobs:
-  build-and-deploy:
+  deploy:
+    name: Build e deploy para VPS
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-    - name: Checkout Código
-      uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
 
-    - name: Configurar Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '20'
+      - name: Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-    - name: Build Frontend (Vite + TypeScript)
-      run: |
-        npm install
-        npm run build
+      - name: Build — frontend
+        run: |
+          npm ci
+          npm run build
 
-    - name: Build Backend (Node.js)
-      working-directory: ./backend-node
-      run: |
-        npm install
-        npx prisma generate
-        npm run build
+      - name: Build — backend
+        working-directory: ./backend-node
+        run: |
+          npm ci
+          npx prisma generate
+          npm run build
 
-    - name: Empacotar artefatos de deploy
-      run: |
-        cd dist && zip -r ../dist.zip . && cd ..
-        cd backend-node && zip -r ../backend.zip dist node_modules package.json prisma src tsconfig.json && cd ..
+      - name: Preparar pacote de deploy
+        run: |
+          mkdir -p deploy-pkg/prisma
+          tar -czf deploy-pkg/frontend.tar.gz     -C dist .
+          tar -czf deploy-pkg/backend-dist.tar.gz -C backend-node/dist .
+          cp backend-node/package.json             deploy-pkg/
+          cp backend-node/package-lock.json        deploy-pkg/
+          cp backend-node/prisma/schema.prisma     deploy-pkg/prisma/
 
-    - name: Enviar artefatos para a VPS via SCP
-      uses: appleboy/scp-action@v0.1.7
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        source: "dist.zip,backend.zip"
-        target: "/tmp/"
+      - name: Enviar pacote para VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          source: "deploy-pkg"
+          target: "/tmp/"
 
-    - name: Finalizar Deploy via SSH (unzip, Node.js restart)
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_PRIVATE_KEY }}
-        port: ${{ secrets.SSH_PORT }}
-        script: |
-          set -e
+      - name: Aplicar deploy na VPS
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT }}
+          command_timeout: 12m
+          script: |
+            set -e
+            PKG=/tmp/deploy-pkg
+            BACKEND=/root/CP-Agenda-Pro-Brasil/backend-node
+            FRONTEND=/var/www/cpagendapro/public
 
-          # Frontend: limpar e descompactar
-          rm -rf /var/www/cpagendapro/public/*
-          unzip -o /tmp/dist.zip -d /var/www/cpagendapro/public/
-          rm /tmp/dist.zip
+            echo "==> Atualizando frontend..."
+            rm -rf "$FRONTEND"/*
+            tar -xzf "$PKG/frontend.tar.gz" -C "$FRONTEND/"
 
-          # Backend: descompactar sobre a pasta existente
-          # Como estamos mudando para Node.js, não vamos mais usar /var/www/cpagendapro/backend
-          # O código Node roda do diretório que o PM2 monitora: /root/CP-Agenda-Pro-Brasil/backend-node
-          # Portanto, apenas o git pull na VPS será suficiente no futuro, mas mantemos o zip por segurança
-          rm /tmp/backend.zip
+            echo "==> Atualizando backend (dist)..."
+            rm -rf "$BACKEND/dist"
+            mkdir -p "$BACKEND/dist"
+            tar -xzf "$PKG/backend-dist.tar.gz" -C "$BACKEND/dist/"
 
-          echo "Deploy concluído com sucesso em $(date)"
+            echo "==> Atualizando dependências..."
+            cp "$PKG/package.json"          "$BACKEND/"
+            cp "$PKG/package-lock.json"     "$BACKEND/"
+            cp "$PKG/prisma/schema.prisma"  "$BACKEND/prisma/"
+            cd "$BACKEND"
+            npm ci --omit=dev
+
+            echo "==> Aplicando schema Prisma..."
+            npx prisma db push
+            npx prisma generate
+
+            echo "==> Reiniciando PM2..."
+            pm2 restart cpagenda-backend --update-env
+
+            echo "==> Limpando temp..."
+            rm -rf "$PKG"
+
+            echo ""
+            echo "Deploy concluído: $(date '+%d/%m/%Y %H:%M:%S')"
+            pm2 list

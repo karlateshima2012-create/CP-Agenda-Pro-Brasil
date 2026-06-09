@@ -41,8 +41,16 @@ function normalizePhoneToE164BR(phoneRaw: string) {
   return digits;
 }
 
+function parseBRT(s: string): Date {
+  const normalized = s.replace(' ', 'T');
+  // Se já tem offset (Z, +, ou -XX:XX após hora), usa diretamente
+  if (normalized.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(normalized)) return new Date(normalized);
+  // String naive → interpreta como BRT (UTC-3) explicitamente
+  return new Date(normalized + '-03:00');
+}
+
 function formatWhenJST(startAt: string) {
-  return new Date(startAt).toLocaleString('pt-BR', {
+  return parseBRT(startAt).toLocaleString('pt-BR', {
     timeZone: 'America/Sao_Paulo',
     year: 'numeric',
     month: '2-digit',
@@ -118,16 +126,9 @@ export const AppointmentsTab: React.FC<Props> = ({ appointments, availability, o
   };
 
   const getJSTDate = (dateStr: string | number | Date) => {
-    let d: Date;
-    if (typeof dateStr === 'string' && !dateStr.endsWith('Z') && !dateStr.includes('+')) {
-      // Treat as local wall-clock time (do NOT add Z)
-      d = new Date(dateStr.replace(' ', 'T'));
-    } else {
-      d = new Date(dateStr);
-    }
+    const d = typeof dateStr === 'string' ? parseBRT(dateStr) : new Date(dateStr);
     if (isNaN(d.getTime())) return new Date();
-    
-    // Obter data e hora formatadas para Tokyo em formato compatível com o Safari (sem vírgulas)
+    // Converte para data/hora no fuso do profissional (São Paulo)
     const yStr = d.toLocaleDateString('sv-SE', { timeZone: 'America/Sao_Paulo' }); // "YYYY-MM-DD"
     const tStr = d.toLocaleTimeString('en-GB', { timeZone: 'America/Sao_Paulo' }); // "HH:MM:SS"
     return new Date(`${yStr}T${tStr}`);
