@@ -1,18 +1,13 @@
 import { AvailabilityConfig, Service } from './types';
 
-export const formatJapanPhone = (value: string | undefined | null) => {
+export const formatBrazilPhone = (value: string | undefined | null) => {
   if (!value || typeof value !== 'string') return '';
   const nums = value.replace(/\D/g, '');
   if (!nums) return '';
-  if (nums.startsWith('0')) {
-    if (nums.length <= 3) return nums;
-    if (nums.length <= 7) return `${nums.slice(0, 3)} ${nums.slice(3)}`;
-    return `${nums.slice(0, 3)} ${nums.slice(3, 7)} ${nums.slice(7, 11)}`;
-  } else {
-    if (nums.length <= 2) return nums;
-    if (nums.length <= 6) return `${nums.slice(0, 2)} ${nums.slice(2)}`;
-    return `${nums.slice(0, 2)} ${nums.slice(2, 6)} ${nums.slice(6, 10)}`;
-  }
+  if (nums.length <= 2) return nums;
+  if (nums.length <= 6) return `(${nums.slice(0, 2)}) ${nums.slice(2)}`;
+  if (nums.length <= 10) return `(${nums.slice(0, 2)}) ${nums.slice(2, 6)}-${nums.slice(6)}`;
+  return `(${nums.slice(0, 2)}) ${nums.slice(2, 7)}-${nums.slice(7, 11)}`;
 };
 
 export const normalizeForWhatsApp = (phone: string | undefined | null) => {
@@ -20,7 +15,7 @@ export const normalizeForWhatsApp = (phone: string | undefined | null) => {
   let nums = phone.replace(/\D/g, '');
   if (!nums) return '';
   if (nums.startsWith('0')) nums = nums.substring(1);
-  if (!nums.startsWith('81')) nums = '81' + nums;
+  if (!nums.startsWith('55')) nums = '55' + nums;
   return nums;
 };
 

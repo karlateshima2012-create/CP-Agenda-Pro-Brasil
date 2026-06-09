@@ -29,15 +29,16 @@ model Account {
   invoices              Json?
   onboarding_seen       Boolean?  @default(false)
   lifetime_appointments Int?      @default(0)
+  last_access_at        DateTime?
   created_at            DateTime? @default(now())
   updated_at            DateTime? @default(now()) @updatedAt
 
-  users                 User[]
-  services              Service[]
-  availability          Availability[]
-  blocked_dates         BlockedDate[]
-  appointments          Appointment[]
-  clients               Client[]
+  users        User[]
+  services     Service[]
+  availability Availability[]
+  blocked_dates BlockedDate[]
+  appointments Appointment[]
+  clients      Client[]
 
   @@map("cp_agenda_accounts")
 }
@@ -55,28 +56,29 @@ model User {
   created_at           DateTime? @default(now())
   updated_at           DateTime? @default(now()) @updatedAt
 
-  account              Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [account_id], references: [id], onDelete: Cascade)
 
   @@map("cp_agenda_users")
 }
 
 model Service {
-  id                Int       @id @default(autoincrement())
-  account_id        Int
-  user_id           Int?
-  name              String    @db.VarChar(255)
-  description       String?   @db.Text
-  duration_min      Int       @default(30)
-  price             Decimal?  @default(0.00) @db.Decimal(10, 2)
-  is_active         Boolean?  @default(true)
-  sort_order        Int?      @default(0)
-  image_url         String?   @db.LongText
-  image_opacity     Int?      @default(100)
-  name_color        String?   @default("#ffffff") @db.VarChar(7)
-  description_color String?   @default("#9ca3af") @db.VarChar(7)
-  created_at        DateTime? @default(now())
+  id                  Int       @id @default(autoincrement())
+  account_id          Int
+  user_id             Int?
+  name                String    @db.VarChar(255)
+  description         String?   @db.Text
+  duration_min        Int       @default(30)
+  cleaning_buffer_min Int?      @default(0)
+  price               Decimal?  @default(0.00) @db.Decimal(10, 2)
+  is_active           Boolean?  @default(true)
+  sort_order          Int?      @default(0)
+  image_url           String?   @db.LongText
+  image_opacity       Int?      @default(100)
+  name_color          String?   @default("#ffffff") @db.VarChar(7)
+  description_color   String?   @default("#9ca3af") @db.VarChar(7)
+  created_at          DateTime? @default(now())
 
-  account           Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [account_id], references: [id], onDelete: Cascade)
 
   @@map("cp_agenda_services")
 }
@@ -87,10 +89,11 @@ model Availability {
   user_id          Int?
   working_hours    Json
   interval_minutes Int?      @default(30)
+  available_months Json?
   created_at       DateTime? @default(now())
   updated_at       DateTime? @default(now()) @updatedAt
 
-  account          Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [account_id], references: [id], onDelete: Cascade)
 
   @@map("cp_agenda_availability")
 }
@@ -105,7 +108,7 @@ model BlockedDate {
   reason       String?   @default("") @db.VarChar(255)
   created_at   DateTime? @default(now())
 
-  account      Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [account_id], references: [id], onDelete: Cascade)
 
   @@map("cp_agenda_blocked_dates")
 }
@@ -120,6 +123,7 @@ model Appointment {
   service_id   Int
   service_name String    @db.VarChar(255)
   start_at     DateTime
+  end_datetime DateTime?
   duration     Int
   status       String?   @default("pending")
   notes        String?   @db.Text
@@ -127,7 +131,7 @@ model Appointment {
   created_at   DateTime? @default(now())
   updated_at   DateTime? @default(now()) @updatedAt
 
-  account      Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [account_id], references: [id], onDelete: Cascade)
 
   @@index([start_at])
   @@map("cp_agenda_appointments")
@@ -142,7 +146,7 @@ model Client {
   created_at DateTime? @default(now())
   updated_at DateTime? @default(now()) @updatedAt
 
-  account    Account   @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  account Account @relation(fields: [account_id], references: [id], onDelete: Cascade)
 
   @@unique([account_id, phone])
   @@map("cp_agenda_clients")

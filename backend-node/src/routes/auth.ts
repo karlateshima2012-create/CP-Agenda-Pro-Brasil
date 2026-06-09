@@ -1,13 +1,15 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
 import { prisma } from '../server.js';
-import { requireAuth, AuthRequest } from '../middlewares/auth.js';
+import { requireAuth, AuthRequest, getJwtSecret } from '../middlewares/auth.js';
+import { loginRateLimiter, forgotPasswordRateLimiter } from '../middlewares/rateLimiter.js';
+import { sendMail, buildResetEmail } from '../lib/mail.js';
 
 const router = Router();
 
-// Rota de Login
-router.post('/login', async (req, res) => {
+router.post('/login', loginRateLimiter, async (req, res) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
@@ -20,27 +22,21 @@ router.post('/login', async (req, res) => {
       include: { account: true }
     });
 
-    if (!user) {
+    if (!user || !(await bcrypt.compare(password, user.password_hash))) {
       return res.status(401).json({ error: 'Credenciais inválidas' });
     }
 
-    const isValid = await bcrypt.compare(password, user.password_hash);
-    if (!isValid) {
-      return res.status(401).json({ error: 'Credenciais inválidas' });
-    }
-
-    // Criar token
     const token = jwt.sign(
       { userId: user.id, accountId: user.account_id, role: user.role },
-      process.env.JWT_SECRET || 'fallback_secret',
+      getJwtSecret(),
       { expiresIn: '7d' }
     );
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: true,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
     res.json({
@@ -54,32 +50,25 @@ router.post('/login', async (req, res) => {
         account_status: user.account.status
       }
     });
-
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Erro interno no servidor' });
   }
 });
 
-// Rota de Logout (Apenas responde com sucesso pois JWT é stateless)
 router.post('/logout', (req, res) => {
   res.clearCookie('token');
   res.json({ success: true });
 });
 
-// Recuperar dados da sessão atual
 router.get('/me', requireAuth, async (req: AuthRequest, res) => {
   try {
-    if (!req.user) return res.status(401).json({ error: 'Não autorizado' });
-
     const user = await prisma.user.findUnique({
-      where: { id: req.user.userId },
+      where: { id: req.user!.userId },
       include: { account: true }
     });
 
-    if (!user) {
-      return res.status(404).json({ error: 'Usuário não encontrado' });
-    }
+    if (!user) return res.status(404).json({ error: 'Usuário não encontrado' });
 
     res.json({
       user: {
@@ -93,7 +82,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res) => {
       account: {
         id: user.account.id,
         name: user.account.name,
-        contact_phone: user.account.owner_name, // Temporário, mapeando para não quebrar frontend
+        contact_phone: user.account.contact_phone,
         status: user.account.status,
         plan_type: user.account.plan_type,
         plan_expires_at: user.account.plan_expires_at,
@@ -114,16 +103,74 @@ router.get('/me', requireAuth, async (req: AuthRequest, res) => {
         invoices: user.account.invoices
       }
     });
-
   } catch (error) {
     console.error('Get me error:', error);
     res.status(500).json({ error: 'Erro interno no servidor' });
   }
 });
 
-// Recuperar senha (mock para compatibilidade imediata)
-router.post('/forgot-password', async (req, res) => {
-  res.json({ message: 'Se o email existir, um link de recuperação foi enviado.' });
+router.post('/forgot-password', forgotPasswordRateLimiter, async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: 'E-mail obrigatório' });
+
+  // Resposta vaga intencional — não revelar se o e-mail existe ou não
+  const vague = { message: 'Se o e-mail estiver cadastrado, você receberá as instruções.' };
+
+  try {
+    const user = await prisma.user.findUnique({ where: { email } });
+    if (!user) return res.json(vague);
+
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { reset_token: token, reset_expires: expires }
+    });
+
+    const appUrl = process.env.APP_URL || `https://${process.env.HTTP_HOST || 'cpagendapro.creativeprintjp.com'}`;
+    const resetLink = `${appUrl}/reset-password?code=${token}`;
+
+    await sendMail(email, 'Recuperação de Senha - CP Agenda Pro', buildResetEmail(resetLink));
+
+    res.json(vague);
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.json(vague); // Nunca revelar erro interno ao público
+  }
+});
+
+router.post('/reset-password', async (req, res) => {
+  const { code, password } = req.body;
+
+  if (!code || !password) {
+    return res.status(400).json({ error: 'Código e nova senha são obrigatórios' });
+  }
+  if (password.length < 8) {
+    return res.status(400).json({ error: 'A senha deve ter pelo menos 8 caracteres' });
+  }
+
+  try {
+    const user = await prisma.user.findFirst({
+      where: {
+        reset_token: code,
+        reset_expires: { gt: new Date() }
+      }
+    });
+
+    if (!user) return res.status(400).json({ error: 'Código inválido ou expirado' });
+
+    const hash = await bcrypt.hash(password, 10);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password_hash: hash, reset_token: null, reset_expires: null }
+    });
+
+    res.json({ message: 'Senha redefinida com sucesso' });
+  } catch (error) {
+    console.error('Reset password error:', error);
+    res.status(500).json({ error: 'Erro interno no servidor' });
+  }
 });
 
 export default router;
