@@ -165,7 +165,7 @@ const App: React.FC = () => {
     }
   };
 
-  const fetchAllData = async (userId: string, role: UserRole) => {
+  const fetchAllData = async (userId: string, role: UserRole, userObj?: any, accountObj?: any) => {
     try {
       if (role === 'admin' || role === 'super_admin') {
         log.info('🔍 [App] Fetching admin profiles for role:', role);
@@ -190,21 +190,16 @@ const App: React.FC = () => {
         } else {
           log.error('❌ [App] Failed to fetch profiles:', resp);
         }
-      } else {
-        await fetchClientData(userId);
+      } else if (userObj && accountObj) {
+        await fetchClientData(userId, userObj, accountObj);
       }
     } catch (e: any) {
       log.error("Erro ao carregar dados do painel:", e);
     }
   };
 
-  const fetchClientData = async (userId: string) => {
+  const fetchClientData = async (userId: string, user: any, account: any) => {
     try {
-      const meResp: any = await api.getMe();
-      if (!meResp.ok || !meResp.data) return;
-      const { user, account } = meResp.data;
-      if (!user || !account) return;
-
       const accountInfo: AccountInfo = {
         companyName: account.name || 'Empresa',
         contactEmail: user.email || '',
@@ -292,7 +287,7 @@ const App: React.FC = () => {
 
         if (user.must_change_password) setMustChangePassword(true);
 
-        await fetchAllData(user.id, user.role);
+        await fetchAllData(user.id, user.role, user, account);
       } else {
         setSession(null);
       }
