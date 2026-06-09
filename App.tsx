@@ -542,6 +542,9 @@ const App: React.FC = () => {
     try {
       const resp: any = await api.login({ email, password: pass });
       if (resp.ok) {
+        if (resp.data.token) {
+          localStorage.setItem('cpagenda_token', resp.data.token);
+        }
         showToast(`Bem-vindo, ${resp.data.user.name}!`);
         await handleAuthCheck();
       } else {
@@ -554,6 +557,7 @@ const App: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      localStorage.removeItem('cpagenda_token');
       await api.logout();
       clearAllStates(); // ✅ QUALITY FIX: Clear all local state on logout to prevent data leakage
       setSession(null);

@@ -9,6 +9,15 @@ const apiClient = axios.create({
     }
 });
 
+// Request interceptor to attach bearer token as fallback for strict browsers
+apiClient.interceptors.request.use((config) => {
+    const token = localStorage.getItem('cpagenda_token');
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
 // Response interceptor to handle session expiration
 apiClient.interceptors.response.use(
     (response) => response.data,
