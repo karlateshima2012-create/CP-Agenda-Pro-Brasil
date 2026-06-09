@@ -294,7 +294,10 @@ const App: React.FC = () => {
       }
     } catch (err: any) {
       console.error("Erro no check de auth:", err);
-      showToast("Falha ao carregar perfil: " + (err.message || "Erro desconhecido"), "error");
+      const is401 = err.message && (err.message.includes('401') || err.message.includes('Token') || err.message.includes('Acesso negado'));
+      if (!is401) {
+        showToast("Falha ao carregar perfil: " + (err.message || "Erro desconhecido"), "error");
+      }
       setSession(null);
     } finally {
       setLoading(false);
