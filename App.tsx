@@ -289,10 +289,12 @@ const App: React.FC = () => {
 
         await fetchAllData(user.id, user.role, user, account);
       } else {
+        showToast("Erro na validação do perfil: Dados incompletos", "error");
         setSession(null);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Erro no check de auth:", err);
+      showToast("Falha ao carregar perfil: " + (err.message || "Erro desconhecido"), "error");
       setSession(null);
     } finally {
       setLoading(false);
