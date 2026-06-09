@@ -542,19 +542,8 @@ const App: React.FC = () => {
     try {
       const resp: any = await api.login({ email, password: pass });
       if (resp.ok) {
-        setSession({ user: resp.data.user });
-        setUserRole(resp.data.user.role);
-        // Check for blocked status immediately
-        if (resp.data.user.account_status !== 'active') {
-          setCurrentAccountStatus('blocked');
-          setBlockedReason(resp.data.user.account_status === 'blocked' ? 'Conta bloqueada' : 'Plano vencido');
-        }
-
-        if (resp.data.user.must_change_password) {
-          setMustChangePassword(true);
-        }
-        await fetchAllData(resp.data.user.id, resp.data.user.role);
         showToast(`Bem-vindo, ${resp.data.user.name}!`);
+        await handleAuthCheck();
       } else {
         throw new Error(resp.error || 'Credenciais inválidas');
       }
