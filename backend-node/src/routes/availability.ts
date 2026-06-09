@@ -125,13 +125,10 @@ router.get('/slots/:accountId', async (req, res) => {
 
     const totalSlot = duration + buffer;
 
-    const [availability, account] = await Promise.all([
-      prisma.availability.findFirst({ where: { account_id: accId } }),
-      prisma.account.findUnique({ where: { id: accId }, select: { timezone: true } })
-    ]);
+    const availability = await prisma.availability.findFirst({ where: { account_id: accId } });
     if (!availability) return res.status(404).json({ error: 'Disponibilidade não configurada' });
 
-    const tz = account?.timezone ?? 'America/Sao_Paulo';
+    const tz = 'America/Sao_Paulo';
 
     const workingHours = (typeof availability.working_hours === 'string'
       ? JSON.parse(availability.working_hours)

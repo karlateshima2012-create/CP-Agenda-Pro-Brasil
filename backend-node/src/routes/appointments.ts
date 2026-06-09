@@ -39,13 +39,10 @@ router.post('/create', async (req, res) => {
   const svcId = parseInt(serviceId) || 0;
   const durationMin = parseInt(duration) || 30;
 
-  // Buscar serviço e timezone da conta em paralelo
-  const [svc, accTZ] = await Promise.all([
-    prisma.service.findUnique({ where: { id: svcId }, select: { cleaning_buffer_min: true } }),
-    prisma.account.findUnique({ where: { id: accId }, select: { timezone: true } })
-  ]);
+  // Buscar serviço da conta
+  const svc = await prisma.service.findUnique({ where: { id: svcId }, select: { cleaning_buffer_min: true } });
 
-  const tz = accTZ?.timezone ?? 'America/Sao_Paulo';
+  const tz = 'America/Sao_Paulo';
   const buffer = svc?.cleaning_buffer_min ?? 0;
   const totalMin = durationMin + buffer;
 
