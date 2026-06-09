@@ -94,7 +94,8 @@ router.patch('/profiles/:id', async (req: AuthRequest, res) => {
       accountStatus: 'status',
       planType: 'plan_type',
       planExpiresAt: 'plan_expires_at',
-      invoices: 'invoices'
+      invoices: 'invoices',
+      timezone: 'timezone'
     };
 
     const accountData: Record<string, any> = {};
@@ -153,7 +154,7 @@ router.post('/profiles/:id/renew', async (req: AuthRequest, res) => {
 // Criar novo usuário/conta
 router.post('/users', async (req: AuthRequest, res) => {
   try {
-    const { email, password, companyName, ownerName, contactPhone, planType } = req.body;
+    const { email, password, companyName, ownerName, contactPhone, planType, timezone } = req.body;
 
     const required = ['email', 'password', 'companyName', 'ownerName'];
     for (const f of required) {
@@ -181,7 +182,8 @@ router.post('/users', async (req: AuthRequest, res) => {
         contact_phone: contactPhone || '',
         plan_type: planType || '6m',
         plan_expires_at: expiresAt,
-        status: 'active'
+        status: 'active',
+        timezone: timezone || 'America/Sao_Paulo'
       }
     });
 

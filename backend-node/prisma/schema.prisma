@@ -27,6 +27,7 @@ model Account {
   telegram_bot_token    String?   @default("") @db.VarChar(255)
   telegram_chat_id      String?   @default("") @db.VarChar(255)
   invoices              Json?
+  timezone              String    @default("America/Sao_Paulo") @db.VarChar(60)
   onboarding_seen       Boolean?  @default(false)
   lifetime_appointments Int?      @default(0)
   last_access_at        DateTime?

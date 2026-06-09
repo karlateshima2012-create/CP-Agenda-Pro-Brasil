@@ -25,6 +25,7 @@ router.patch('/profile', requireAuth, async (req: AuthRequest, res) => {
     if (body.coverOpacity      !== undefined) data.cover_opacity      = body.coverOpacity;
     if (body.telegramBotToken  !== undefined) data.telegram_bot_token = body.telegramBotToken;
     if (body.telegramChatId    !== undefined) data.telegram_chat_id   = body.telegramChatId;
+    if (body.timezone          !== undefined) data.timezone           = body.timezone;
 
     if (Object.keys(data).length > 0) {
       await prisma.account.update({ where: { id: accountId }, data });

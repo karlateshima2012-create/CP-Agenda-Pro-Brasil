@@ -40,7 +40,7 @@ export const api = {
     },
 
     async getMe(): Promise<ApiResponse<{ user: User; account: Record<string, unknown> }>> {
-        return apiClient.get('/me');
+        return apiClient.get('/auth/me');
     },
 
     // Diagnostics

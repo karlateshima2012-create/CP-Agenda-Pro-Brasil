@@ -2,23 +2,14 @@ import { Router } from 'express';
 import { prisma } from '../server.js';
 import { requireAuth, AuthRequest } from '../middlewares/auth.js';
 import { sendTelegramMessage, buildAppointmentMessage } from '../lib/telegram.js';
+import { dateInTZ, todayInTZ, validateBookingDate } from '../lib/scheduling.js';
 
 const router = Router();
-
-const TZ = 'America/Sao_Paulo';
 
 // Express 5 tipifica query params como string | string[] | ParsedQs | ParsedQs[]
 function qstr(val: unknown): string | undefined {
   if (!val) return undefined;
   return Array.isArray(val) ? String(val[0]) : String(val);
-}
-
-function nowBRT(): Date {
-  return new Date(new Date().toLocaleString('en-US', { timeZone: TZ }));
-}
-
-function dateBRT(d: Date): string {
-  return d.toLocaleDateString('en-CA', { timeZone: TZ }); // YYYY-MM-DD
 }
 
 // =======================================================
@@ -48,8 +39,13 @@ router.post('/create', async (req, res) => {
   const svcId = parseInt(serviceId) || 0;
   const durationMin = parseInt(duration) || 30;
 
-  // Calcular end_datetime incluindo buffer de limpeza
-  const svc = await prisma.service.findUnique({ where: { id: svcId }, select: { cleaning_buffer_min: true } });
+  // Buscar serviço e timezone da conta em paralelo
+  const [svc, accTZ] = await Promise.all([
+    prisma.service.findUnique({ where: { id: svcId }, select: { cleaning_buffer_min: true } }),
+    prisma.account.findUnique({ where: { id: accId }, select: { timezone: true } })
+  ]);
+
+  const tz = accTZ?.timezone ?? 'America/Sao_Paulo';
   const buffer = svc?.cleaning_buffer_min ?? 0;
   const totalMin = durationMin + buffer;
 
@@ -58,13 +54,10 @@ router.post('/create', async (req, res) => {
 
   const endDt = new Date(startDt.getTime() + totalMin * 60000);
 
-  // Validação de data — não permitir hoje nem passado (fuso BRT)
-  const todayBRT = dateBRT(nowBRT());
-  const startDateBRT = dateBRT(new Date(new Date(startAt).toLocaleString('en-US', { timeZone: TZ })));
-
-  if (startDateBRT <= todayBRT) {
-    return res.status(400).json({ error: 'Agendamentos devem ser feitos com pelo menos 1 dia de antecedência.' });
-  }
+  // Validação de data no fuso do profissional
+  const startDateStr = dateInTZ(startDt, tz);
+  const bookingError = validateBookingDate(startAt, todayInTZ(tz), tz);
+  if (bookingError) return res.status(400).json({ error: bookingError });
 
   const clientPhone = (clientPhoneRaw || '').replace(/\D/g, '');
 
@@ -73,7 +66,7 @@ router.post('/create', async (req, res) => {
     const blockedDate = await prisma.blockedDate.findFirst({
       where: {
         account_id: accId,
-        blocked_date: new Date(`${startDateBRT}T00:00:00Z`),
+        blocked_date: new Date(`${startDateStr}T00:00:00Z`),
         OR: [
           { start_time: null },
           {
